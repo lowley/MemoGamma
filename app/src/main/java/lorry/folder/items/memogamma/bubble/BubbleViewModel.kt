@@ -1,6 +1,7 @@
 package lorry.folder.items.memogamma.bubble
 
 import android.content.Context
+import android.os.Build
 import android.view.MotionEvent
 import androidx.compose.ui.graphics.Path
 import androidx.lifecycle.ViewModel
@@ -65,7 +66,14 @@ class BubbleViewModel @Inject constructor(
                 currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
             }
             MotionEvent.ACTION_UP -> {
-                currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
+                val canceled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                        (motionEvent.flags and MotionEvent.FLAG_CANCELED) == MotionEvent.FLAG_CANCELED
+
+                if(canceled) {
+                    cancelLastStroke()
+                } else {
+                    currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
+                }
             }
             MotionEvent.ACTION_CANCEL -> {
                 // Unwanted touch detected.
@@ -96,6 +104,16 @@ class BubbleViewModel @Inject constructor(
     }
 
     private fun cancelLastStroke() {
+        // Find the last START event.
+        val lastStart = currentPath.last {
+            it.type == DrawPointType.START
+        }
+        val lastIndex = currentPath.indexOf(lastStart)
+
+        // If found, keep the element from 0 until the very last event before the last MOVE event.
+        if (lastIndex > 0) {
+            currentPath = currentPath.subList(0, lastIndex - 1)
+        }
     }
     
     init {
