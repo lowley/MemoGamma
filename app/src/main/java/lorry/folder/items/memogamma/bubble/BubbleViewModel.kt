@@ -3,6 +3,7 @@ package lorry.folder.items.memogamma.bubble
 import android.content.Context
 import android.os.Build
 import android.view.MotionEvent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +29,9 @@ class BubbleViewModel @Inject constructor(
     private val _bubbleState = MutableStateFlow(BubbleState.BUBBLE)
     val bubbleState: StateFlow<BubbleState> = _bubbleState
 
+    private val _stylusColor = MutableStateFlow(Color.Black)
+    val stylusColor: StateFlow<Color> = _stylusColor
+    
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     
     private var _stylusState = MutableStateFlow(StylusState())
@@ -115,7 +119,11 @@ class BubbleViewModel @Inject constructor(
             currentPath = currentPath.subList(0, lastIndex - 1)
         }
     }
-    
+
+    fun setStylusColor(color: Color) {
+        _stylusColor.value = color
+    }
+
     init {
         println("THOO: init() exécutée...")
         create()
