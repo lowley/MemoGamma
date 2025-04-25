@@ -60,6 +60,9 @@ class BubbleViewModel @Inject constructor(
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
         println("GAMMA: Event reçu : ${motionEvent.actionMasked}, x=${motionEvent.x}, y=${motionEvent.y}")
         
+        if (motionEvent.getToolType(0) != MotionEvent.TOOL_TYPE_STYLUS)
+            return false
+        
         when (motionEvent.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 currentPath.add(
