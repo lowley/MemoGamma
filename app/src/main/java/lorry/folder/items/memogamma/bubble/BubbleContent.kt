@@ -115,17 +115,18 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         .padding(top = 10.dp, start = 5.dp)
                         .height(30.dp)
                         .fillMaxWidth(),
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    stylusColor
 //                                .background(Color.Black.copy(alpha = 0.2f))
                 )
 
-                Row {
-                    Text(text = "nb:${pointerCount}", modifier = Modifier.padding(end = 5.dp))
-                    Text(text = "actPtr:${activePointer}", modifier = Modifier.padding(end = 5.dp))
-                    Text(text = "action:${action}", modifier = Modifier.padding(end = 5.dp))
-                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
-                    Text(text = "typ$pointerName2")
-                }
+//                Row {
+//                    Text(text = "nb:${pointerCount}", modifier = Modifier.padding(end = 5.dp))
+//                    Text(text = "actPtr:${activePointer}", modifier = Modifier.padding(end = 5.dp))
+//                    Text(text = "action:${action}", modifier = Modifier.padding(end = 5.dp))
+//                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
+//                    Text(text = "typ$pointerName2")
+//                }
                 HorizontalDivider(
                     thickness = 1.dp,
                     color = Color.Black
@@ -146,11 +147,13 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 @Composable
 fun StylusVisualization(
     modifier: Modifier = Modifier,
-    viewModel: BubbleViewModel
+    viewModel: BubbleViewModel,
+    stylusColor: Color
 ) {
     Row(
         modifier = modifier
     ) {
+        val arrowSize = 25.dp
         Icon(
             modifier = Modifier
                 .padding(end = 5.dp)
@@ -158,8 +161,10 @@ fun StylusVisualization(
                 .clickable {
                     viewModel.setStylusColor(Color(0xFFA82D2D))
                 }
-                .size(20.dp),
-            painter = painterResource(R.drawable.plume),
+                .size(arrowSize),
+            painter = if (stylusColor == Color(0xFFA82D2D)) 
+                painterResource(R.drawable.stylo_plume_trait)
+                else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFFA82D2D),
             contentDescription = "rouge"
         )
@@ -168,11 +173,13 @@ fun StylusVisualization(
             modifier = Modifier
                 .padding(end = 5.dp)
                 .zIndex(0f)
-                .size(20.dp)
+                .size(arrowSize)
                 .clickable {
                     viewModel.setStylusColor(Color(0xFF429325))
                 },
-            painter = painterResource(R.drawable.plume),
+            painter = if (stylusColor == Color(0xFF429325))
+                painterResource(R.drawable.stylo_plume_trait)
+            else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFF429325),
             contentDescription = "vert"
         )
@@ -181,11 +188,13 @@ fun StylusVisualization(
             modifier = Modifier
                 .padding(end = 5.dp)
                 .zIndex(0f)
-                .size(20.dp)
+                .size(arrowSize)
                 .clickable {
                     viewModel.setStylusColor(Color(0xFF5068C2))
                 },
-            painter = painterResource(R.drawable.plume),
+            painter = if (stylusColor == Color(0xFF5068C2))
+                painterResource(R.drawable.stylo_plume_trait)
+            else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFF5068C2),
             contentDescription = "bleu"
         )
@@ -193,12 +202,14 @@ fun StylusVisualization(
         Icon(
             modifier = Modifier
                 .padding(end = 5.dp)
-                .size(20.dp)
+                .size(arrowSize)
                 .zIndex(0f)
                 .clickable {
                     viewModel.setStylusColor(Color(0xFF000000))
                 },
-            painter = painterResource(R.drawable.plume),
+            painter = if (stylusColor == Color(0xFF000000))
+                painterResource(R.drawable.stylo_plume_trait)
+            else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFF000000),
             contentDescription = "noir"
         )
