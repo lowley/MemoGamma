@@ -137,7 +137,6 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         .height(300.dp),
                     viewModel,
                     stylusState,
-                    stylusColor
                 )
             }
         }
@@ -162,9 +161,9 @@ fun StylusVisualization(
                     viewModel.setStylusColor(Color(0xFFA82D2D))
                 }
                 .size(arrowSize),
-            painter = if (stylusColor == Color(0xFFA82D2D)) 
+            painter = if (stylusColor == Color(0xFFA82D2D))
                 painterResource(R.drawable.stylo_plume_trait)
-                else painterResource(R.drawable.stylo_plume_seul),
+            else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFFA82D2D),
             contentDescription = "rouge"
         )
@@ -222,9 +221,7 @@ fun DrawArea(
     modifier: Modifier = Modifier,
     viewModel: BubbleViewModel,
     stylusState: StylusState,
-    stylusColor: Color
 ) {
-
     Canvas(
         modifier = modifier
             .fillMaxSize()
@@ -236,25 +233,49 @@ fun DrawArea(
                 viewModel.processMotionEvent(it)
             }
     ) {
-        with(stylusState) {
+        stylusState.items.forEach { item ->
             drawPath(
-                path = this.path,
-                color = stylusColor,
-                style = Stroke(width = 3f)
+                path = item.path,
+                color = item.color,
+                style = item.style
             )
         }
     }
 }
 
 data class StylusState(
-    var pressure: Float = 0F,
-    var orientation: Float = 0F,
-    var tilt: Float = 0F,
-    var path: Path = Path(),
+    var items: MutableList<StylusStatePath> = mutableListOf<StylusStatePath>(),
+) {
+    fun replaceLastPath(lastItemPath: MutableList<DrawPoint>): StylusState {
+        val newItems = items.mapIndexed { i, item ->
+            if (i == items.lastIndex)
+                StylusStatePath(
+                    path = BubbleViewModel.createPath(lastItemPath),
+                    color = item.color,
+                    style = item.style
+                    )
+            else item
+        }
+        return StylusState(newItems.toMutableList())
+    }
+}
+
+data class StylusStatePath(
+//    var pressure: Float = 0F,
+//    var orientation: Float = 0F,
+//    var tilt: Float = 0F,
+    var path: Path,
+    var color: Color,
+    var style: Stroke,
 )
 
-class DrawPoint(x: Float, y: Float, val type: DrawPointType) : PointF(x, y){
-    fun copy(x: Float = this.x, y: Float = this.y, type: DrawPointType = this.type): DrawPoint = DrawPoint(x, y, type)
+class DrawPoint(
+    x: Float,
+    y: Float,
+    val type: DrawPointType
+) : PointF(x, y) {
+    fun copy(x: Float = this.x, y: Float = this.y, type: DrawPointType = this.type): DrawPoint =
+        DrawPoint(x, y, type)
 }
 
 enum class DrawPointType {
@@ -304,7 +325,7 @@ data class TwoFingersScrollState(
 
         val deltaY: Float?
             get() = ensureInstance().yvar ?: 0f
-        
+
         fun reset() {
             instance = null
         }

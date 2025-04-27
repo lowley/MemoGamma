@@ -4,7 +4,9 @@ import android.content.Context
 import android.os.Build
 import android.view.MotionEvent
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +27,22 @@ import javax.inject.Inject
 class BubbleViewModel @Inject constructor(
     @ApplicationContext val context: Context,
 ) : ViewModel() {
+
+    companion object {
+        fun createPath(points: MutableList<DrawPoint>): Path {
+            val path = Path()
+
+            for (point in points) {
+                if (point.type == DrawPointType.START) {
+                    path.moveTo(point.x, point.y)
+                } else {
+                    path.lineTo(point.x, point.y)
+                }
+            }
+            return path
+        }
+    }
+
     val Id: UUID = UUID.randomUUID()
 
     private val _bubbleState = MutableStateFlow(BubbleState.BUBBLE)
@@ -51,29 +69,17 @@ class BubbleViewModel @Inject constructor(
     private val _stylusColor = MutableStateFlow(Color.Black)
     val stylusColor: StateFlow<Color> = _stylusColor
 
+    private val _stylusStroke = MutableStateFlow(Stroke(width = 1f))
+    val stylusStroke: StateFlow<Stroke> = _stylusStroke
+
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private var _stylusState = MutableStateFlow(StylusState())
     val stylusState: StateFlow<StylusState> = _stylusState
 
-    private var currentPath = mutableListOf<DrawPoint>()
-
     private fun requestRendering(stylusState: StylusState) {
         // Updates the stylusState, which triggers a flow.
         _stylusState.value = stylusState
-    }
-
-    private fun createPath(): Path {
-        val path = Path()
-
-        for (point in currentPath) {
-            if (point.type == DrawPointType.START) {
-                path.moveTo(point.x, point.y)
-            } else {
-                path.lineTo(point.x, point.y)
-            }
-        }
-        return path
     }
 
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
@@ -125,26 +131,26 @@ class BubbleViewModel @Inject constructor(
                         DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
                     )
 
-                    currentPath = currentPath.map {
-                        it.copy(
-                            x = it.x + (TwoFingersScrollState.deltaX ?: 0f),
-                            y = it.y + (TwoFingersScrollState.deltaY ?: 0f)
-                        )
-                    }.toMutableList()
-
-                    requestRendering(
-                        StylusState(
-                            tilt = motionEvent.getAxisValue(MotionEvent.AXIS_TILT),
-                            pressure = motionEvent.pressure,
-                            orientation = motionEvent.orientation,
-                            path = createPath()
-                        )
-                    )
-
-                    TwoFingersScrollState.setStartPoint(
-                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                    )
+                    _stylusState.update { state ->
+                        val newItems = state.items.map { item ->
+                            val newPath = Path().apply {
+                                addPath(item.path)
+                                transform(Matrix().apply { translate(TwoFingersScrollState.deltaX ?: 0f, TwoFingersScrollState.deltaY ?: 0f) })
+                            }
+                            item.copy(path = newPath)
+                        }.toMutableList()
+                        
+                        StylusState(newItems)
+                    }
                 }
+
+                requestRendering(
+                    stylusState.value
+                )
+
+                TwoFingersScrollState.setStartPoint(
+                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                )
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
@@ -188,13 +194,34 @@ class BubbleViewModel @Inject constructor(
 
             when (motionEvent.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    currentPath.add(
-                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                    )
+                    _stylusState.update { state ->
+                        val items = state.items
+                        items.add(
+                            StylusStatePath(
+                                path = createPath(
+                                    mutableListOf(
+                                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                                    )
+                                ),
+                                color = stylusColor.value,
+                                style = Stroke(1f)
+                            )
+                        )
+                        StylusState(items)
+                    }
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
+                    _stylusState.update { state ->
+                        val items = state.items.toMutableList()
+                        val lastItem = items.last()
+                        val newPath = Path().apply {
+                            addPath(lastItem.path)
+                            lineTo(motionEvent.x, motionEvent.y)
+                        }
+                        items.add(lastItem.copy(path = newPath))
+                        StylusState(items)
+                    }
                 }
 
                 MotionEvent.ACTION_UP -> {
@@ -204,7 +231,11 @@ class BubbleViewModel @Inject constructor(
                     if (canceled) {
                         cancelLastStroke()
                     } else {
-                        currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
+                        _stylusState.update { state ->
+                            state.items.last().path.lineTo(motionEvent.x, motionEvent.y)
+                            StylusState(state.items)
+                        }
+//                        currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
                     }
                 }
 
@@ -218,12 +249,13 @@ class BubbleViewModel @Inject constructor(
         }
 
         requestRendering(
-            StylusState(
-                tilt = motionEvent.getAxisValue(MotionEvent.AXIS_TILT),
-                pressure = motionEvent.pressure,
-                orientation = motionEvent.orientation,
-                path = createPath()
-            )
+            stylusState.value
+//            StylusState(
+//                tilt = motionEvent.getAxisValue(MotionEvent.AXIS_TILT),
+//                pressure = motionEvent.pressure,
+//                orientation = motionEvent.orientation,
+//                path = createPath(currentPath)
+//            )
         )
 
         return true
@@ -240,14 +272,15 @@ class BubbleViewModel @Inject constructor(
 
     private fun cancelLastStroke() {
         // Find the last START event.
-        val lastStart = currentPath.last {
-            it.type == DrawPointType.START
-        }
-        val lastIndex = currentPath.indexOf(lastStart)
-
-        // If found, keep the element from 0 until the very last event before the last MOVE event.
-        if (lastIndex > 0) {
-            currentPath = currentPath.subList(0, lastIndex - 1)
+        _stylusState.update { state ->
+            state.apply {
+                if (items.size >= 1)
+                    items.mapIndexedNotNull { i, item ->
+                        if (i == items.size - 1)
+                            null
+                        else item
+                    }
+            }
         }
     }
 
@@ -283,4 +316,11 @@ sealed class BubbleIntent {
     object ShowTotalDialog : BubbleIntent()
     object ShowBubbleDialog : BubbleIntent()
     object HideBubbleDialog : BubbleIntent()
+}
+
+fun Path.translate(dx: Float, dy: Float): Path {
+    val matrix = Matrix()
+    matrix.translate(dx, dy)
+    this.transform(matrix)
+    return this
 }
