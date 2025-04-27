@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.bubble.BubbleManager.intentChannel
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 
 @HiltViewModel
 class BubbleViewModel @Inject constructor(
@@ -78,7 +79,6 @@ class BubbleViewModel @Inject constructor(
     val stylusState: StateFlow<StylusState> = _stylusState
 
     private fun requestRendering(stylusState: StylusState) {
-        // Updates the stylusState, which triggers a flow.
         _stylusState.value = stylusState
     }
 
