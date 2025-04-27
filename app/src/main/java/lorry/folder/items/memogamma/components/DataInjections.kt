@@ -6,15 +6,11 @@ import androidx.lifecycle.ViewModelProvider
 import dagger.Module
 import dagger.hilt.InstallIn
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
+import lorry.folder.items.memogamma.undoRedo.StylusColorChange
 
 @Module
 @InstallIn(dagger.hilt.components.SingletonComponent::class)
 abstract class DataInjections {
-
-//    @dagger.Binds
-//    abstract fun bindFileAccessRepository(
-//        fileAccessRepository: FileAccessRP
-//    ): IFileAccessRP
 //
 //    @dagger.Binds
 //    abstract fun bindFileAccessDataSource(
