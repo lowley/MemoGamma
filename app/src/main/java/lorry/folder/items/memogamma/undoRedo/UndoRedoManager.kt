@@ -1,8 +1,10 @@
 package lorry.folder.items.memogamma.undoRedo
 
-import androidx.compose.ui.graphics.Color
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.ceil
 import kotlin.math.floor
+import kotlin.random.Random
 
 object UndoRedoManager {
     var items: List<IUndoRedoChange<*>> = emptyList()
@@ -10,6 +12,9 @@ object UndoRedoManager {
     val index: Int
         get() = (position + 0.5).toInt()
 
+    private val _changeNotifier = MutableStateFlow(0)
+    val changeNotifier = _changeNotifier.asStateFlow()
+    
     fun currentPositionIsBeforeFirst(): Boolean{
         return position < 0
     }
@@ -22,6 +27,7 @@ object UndoRedoManager {
         if (position > 0f) {
             items.undoChange(position)
             position--
+            _changeNotifier.value = Random.nextInt(1_000_000_000)
         }
     }
 
@@ -31,6 +37,7 @@ object UndoRedoManager {
 
         items.doChange(position)
         position++
+        _changeNotifier.value = Random.nextInt(1_000_000_000)
     }
 
     fun add(change: IUndoRedoChange<*>) {
@@ -38,6 +45,7 @@ object UndoRedoManager {
             items = items.subList(0, index)
         items += change
         position = items.size - 0.5f
+        _changeNotifier.value = Random.nextInt(1_000_000_000)
     }
 }
 

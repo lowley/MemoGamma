@@ -83,7 +83,7 @@ class BubbleViewModel @Inject constructor(
     }
 
     fun setStylusStroke(stroke: Stroke){
-        _stylusStroke.update { stroke }    
+        _stylusStroke.value = Stroke(stroke.width)
     }
     
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {

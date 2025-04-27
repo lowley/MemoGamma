@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,27 +40,24 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
-import kotlinx.coroutines.flow.update
 import lorry.folder.items.memogamma.R
+import lorry.folder.items.memogamma.undoRedo.StrokeChange
 import lorry.folder.items.memogamma.undoRedo.StylusColorChange
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
-import lorry.folder.items.memogamma.undoRedo.UndoRedoManager.items
-import lorry.folder.items.memogamma.undoRedo.UndoRedoManager.position
 
 @Composable
 fun BubbleContent(viewModel: BubbleViewModel) {
     //val floatingWindow = LocalFloatingWindow.current
     val visibilityState by viewModel.bubbleState.collectAsState(BubbleState.HIDDEN)
     val stylusColor by viewModel.stylusColor.collectAsState()
-//    val stylusStroke by viewModel.stylusStroke.collectAsState()
     val pointerCount by viewModel.pointerCount.collectAsState()
     val pointerName1 by viewModel.pointerName1.collectAsState()
     val pointerName2 by viewModel.pointerName2.collectAsState()
@@ -118,10 +116,11 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                 }
 
                 val arrowSize = 30.dp
-
+                val a by UndoRedoManager.changeNotifier.collectAsState()
+                
                 Icon(
                     modifier = Modifier
-                        .padding(end = 5.dp)
+                        .padding(end = 5.dp, top = 5.dp)
                         .zIndex(0f)
                         .clickable {
                             if (!UndoRedoManager.currentPositionIsBeforeFirst())
@@ -131,12 +130,12 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                     painter = painterResource(R.drawable.gauche),
                     tint = if (!UndoRedoManager.currentPositionIsBeforeFirst())
                         Color.Black else Color.Gray,
-                    contentDescription = "undo"
+                    contentDescription = "undo$a"
                 )
 
                 Icon(
                     modifier = Modifier
-                        .padding(end = 5.dp)
+                        .padding(end = 10.dp, top = 5.dp)
                         .zIndex(0f)
                         .clickable {
                             if (!UndoRedoManager.currentPositionIsAfterLast())
@@ -146,7 +145,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                     painter = painterResource(R.drawable.droite),
                     tint = if (UndoRedoManager.items.isNotEmpty() && !UndoRedoManager.currentPositionIsAfterLast())
                         Color.Black else Color.Gray,
-                    contentDescription = "redo"
+                    contentDescription = "redo$a"
                 )
             }
 
@@ -195,6 +194,7 @@ fun StylusVisualization(
 ) {
     Row(
         modifier = modifier
+            .padding(bottom = 5.dp)
     ) {
         val arrowSize = 30.dp
         Icon(
@@ -204,8 +204,11 @@ fun StylusVisualization(
                 .clickable {
                     if (stylusColor == Color(0xFFA82D2D))
                         return@clickable
-                    UndoRedoManager.add(StylusColorChange(
-                        stylusColor, Color(0xFFA82D2D), viewModel))
+                    UndoRedoManager.add(
+                        StylusColorChange(
+                            stylusColor, Color(0xFFA82D2D), viewModel
+                        )
+                    )
                     viewModel.setStylusColor(Color(0xFFA82D2D))
                 }
                 .size(arrowSize),
@@ -224,8 +227,11 @@ fun StylusVisualization(
                 .clickable {
                     if (stylusColor == Color(0xFF429325))
                         return@clickable
-                    UndoRedoManager.add(StylusColorChange(
-                        stylusColor, Color(0xFF429325), viewModel))
+                    UndoRedoManager.add(
+                        StylusColorChange(
+                            stylusColor, Color(0xFF429325), viewModel
+                        )
+                    )
                     viewModel.setStylusColor(Color(0xFF429325))
                 },
             painter = if (stylusColor == Color(0xFF429325))
@@ -243,8 +249,11 @@ fun StylusVisualization(
                 .clickable {
                     if (stylusColor == Color(0xFF5068C2))
                         return@clickable
-                    UndoRedoManager.add(StylusColorChange(
-                        stylusColor, Color(0xFF5068C2), viewModel))
+                    UndoRedoManager.add(
+                        StylusColorChange(
+                            stylusColor, Color(0xFF5068C2), viewModel
+                        )
+                    )
                     viewModel.setStylusColor(Color(0xFF5068C2))
                 },
             painter = if (stylusColor == Color(0xFF5068C2))
@@ -262,8 +271,11 @@ fun StylusVisualization(
                 .clickable {
                     if (stylusColor == Color(0xFF000000))
                         return@clickable
-                    UndoRedoManager.add(StylusColorChange(
-                        stylusColor, Color(0xFF000000), viewModel))
+                    UndoRedoManager.add(
+                        StylusColorChange(
+                            stylusColor, Color(0xFF000000), viewModel
+                        )
+                    )
                     viewModel.setStylusColor(Color(0xFF000000))
                 },
             painter = if (stylusColor == Color(0xFF000000))
@@ -276,23 +288,41 @@ fun StylusVisualization(
         Spacer(
             modifier = Modifier.weight(1f)
         )
-        
-        var stroke by remember { mutableStateOf(1f) }
+
+        var stroke = viewModel.stylusStroke.collectAsState()
 
         Text(
             modifier = Modifier
-                .padding(start = 5.dp,  end  =  5.dp)
+                .padding(start = 5.dp, end = 5.dp)
                 .align(Alignment.CenterVertically),
-            text = String.format(locale = java.util.Locale.FRENCH, "%.2f", stroke)
+            text = String.format(locale = java.util.Locale.FRENCH, "%.2f", stroke.value.width)
         )
-        
+
+        var sliderStartValue by remember { mutableStateOf<Float?>(null) }
+
         Slider(
-            modifier = Modifier.width(200.dp),
-            value = stroke,
+            modifier = Modifier
+                .padding(end = 10.dp)
+                .width(200.dp),
+            value = stroke.value.width,
             valueRange = 0f..5f,
             onValueChange = {
+                if (sliderStartValue == null) {
+                    sliderStartValue = stroke.value.width // Capture l'ancienne valeur au 1er changement
+                }
                 viewModel.setStylusStroke(Stroke(it))
-                stroke = it
+            },
+            onValueChangeFinished = {
+                if (sliderStartValue != null) {
+                    UndoRedoManager.add(
+                        StrokeChange(
+                            Stroke(sliderStartValue!!),
+                            Stroke(stroke.value.width),
+                            viewModel
+                        )
+                    )
+                    sliderStartValue = null // Remise à zéro pour le prochain glissement
+                }
             }
         )
     }
@@ -336,7 +366,7 @@ data class StylusState(
                     path = BubbleViewModel.createPath(lastItemPath),
                     color = item.color,
                     style = item.style
-                    )
+                )
             else item
         }
         return StylusState(newItems.toMutableList())
