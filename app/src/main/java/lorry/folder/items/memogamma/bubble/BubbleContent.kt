@@ -5,7 +5,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +39,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -115,38 +113,40 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                     }
                 }
 
-                val arrowSize = 30.dp
-                val a by UndoRedoManager.changeNotifier.collectAsState()
-                
-                Icon(
-                    modifier = Modifier
-                        .padding(end = 5.dp, top = 5.dp)
-                        .zIndex(0f)
-                        .clickable {
-                            if (!UndoRedoManager.currentPositionIsBeforeFirst())
-                                UndoRedoManager.undo()
-                        }
-                        .size(arrowSize),
-                    painter = painterResource(R.drawable.gauche),
-                    tint = if (!UndoRedoManager.currentPositionIsBeforeFirst())
-                        Color.Black else Color.Gray,
-                    contentDescription = "undo$a"
-                )
+                if (visibilityState == BubbleState.TOTAL) {
+                    val arrowSize = 30.dp
+                    val a by UndoRedoManager.changeNotifier.collectAsState()
 
-                Icon(
-                    modifier = Modifier
-                        .padding(end = 10.dp, top = 5.dp)
-                        .zIndex(0f)
-                        .clickable {
-                            if (!UndoRedoManager.currentPositionIsAfterLast())
-                                UndoRedoManager.redo()
-                        }
-                        .size(arrowSize),
-                    painter = painterResource(R.drawable.droite),
-                    tint = if (UndoRedoManager.items.isNotEmpty() && !UndoRedoManager.currentPositionIsAfterLast())
-                        Color.Black else Color.Gray,
-                    contentDescription = "redo$a"
-                )
+                    Icon(
+                        modifier = Modifier
+                            .padding(end = 5.dp, top = 5.dp)
+                            .zIndex(0f)
+                            .clickable {
+                                if (!UndoRedoManager.currentPositionIsBeforeFirst())
+                                    UndoRedoManager.undo()
+                            }
+                            .size(arrowSize),
+                        painter = painterResource(R.drawable.gauche),
+                        tint = if (!UndoRedoManager.currentPositionIsBeforeFirst())
+                            Color.Black else Color.Gray,
+                        contentDescription = "undo$a"
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .padding(end = 10.dp, top = 5.dp)
+                            .zIndex(0f)
+                            .clickable {
+                                if (!UndoRedoManager.currentPositionIsAfterLast())
+                                    UndoRedoManager.redo()
+                            }
+                            .size(arrowSize),
+                        painter = painterResource(R.drawable.droite),
+                        tint = if (UndoRedoManager.items.isNotEmpty() && !UndoRedoManager.currentPositionIsAfterLast())
+                            Color.Black else Color.Gray,
+                        contentDescription = "redo$a"
+                    )
+                }
             }
 
             if (visibilityState == BubbleState.TOTAL) {
@@ -308,7 +308,8 @@ fun StylusVisualization(
             valueRange = 0f..5f,
             onValueChange = {
                 if (sliderStartValue == null) {
-                    sliderStartValue = stroke.value.width // Capture l'ancienne valeur au 1er changement
+                    sliderStartValue =
+                        stroke.value.width // Capture l'ancienne valeur au 1er changement
                 }
                 viewModel.setStylusStroke(Stroke(it))
             },
