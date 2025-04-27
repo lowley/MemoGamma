@@ -22,11 +22,15 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -36,11 +40,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
+import kotlinx.coroutines.flow.update
 import lorry.folder.items.memogamma.R
 
 @Composable
@@ -48,6 +54,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     //val floatingWindow = LocalFloatingWindow.current
     val visibilityState by viewModel.bubbleState.collectAsState(BubbleState.HIDDEN)
     val stylusColor by viewModel.stylusColor.collectAsState()
+//    val stylusStroke by viewModel.stylusStroke.collectAsState()
     val pointerCount by viewModel.pointerCount.collectAsState()
     val pointerName1 by viewModel.pointerName1.collectAsState()
     val pointerName2 by viewModel.pointerName2.collectAsState()
@@ -152,7 +159,7 @@ fun StylusVisualization(
     Row(
         modifier = modifier
     ) {
-        val arrowSize = 25.dp
+        val arrowSize = 30.dp
         Icon(
             modifier = Modifier
                 .padding(end = 5.dp)
@@ -211,6 +218,25 @@ fun StylusVisualization(
             else painterResource(R.drawable.stylo_plume_seul),
             tint = Color(0xFF000000),
             contentDescription = "noir"
+        )
+        
+        var stroke by remember { mutableStateOf(1f) }
+
+        Text(
+            modifier = Modifier
+                .padding(start = 5.dp,  end  =  5.dp)
+                .align(Alignment.CenterVertically),
+            text = String.format(locale = java.util.Locale.FRENCH, "%.2f", stroke)
+        )
+        
+        Slider(
+            modifier = Modifier.width(200.dp),
+            value = stroke,
+            valueRange = 0f..5f,
+            onValueChange = {
+                viewModel.setStylusStroke(Stroke(it))
+                stroke = it
+            }
         )
     }
 }

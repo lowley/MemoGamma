@@ -82,6 +82,10 @@ class BubbleViewModel @Inject constructor(
         _stylusState.value = stylusState
     }
 
+    fun setStylusStroke(stroke: Stroke){
+        _stylusStroke.update { stroke }    
+    }
+    
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
         _pointerCount.update { motionEvent.pointerCount }
         _activePointer.value = motionEvent.actionIndex;
@@ -204,7 +208,7 @@ class BubbleViewModel @Inject constructor(
                                     )
                                 ),
                                 color = stylusColor.value,
-                                style = Stroke(1f)
+                                style = stylusStroke.value
                             )
                         )
                         StylusState(items)
