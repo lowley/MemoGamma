@@ -126,11 +126,10 @@ class BubbleViewModel @Inject constructor(
 
         when (motionEvent.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
-                if (motionEvent.pointerCount >= 2 &&
+                if (motionEvent.pointerCount == 1 &&
                     motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
-                    && motionEvent.getToolType(1) == MotionEvent.TOOL_TYPE_FINGER
                 ) {
-                    println("GAMMA : Scroll à 2 doigts détecté")
+                    println("GAMMA : Scroll à 1 doigt détecté")
                     TwoFingersScrollState.setEndPoint(
                         DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
                     )
@@ -171,10 +170,35 @@ class BubbleViewModel @Inject constructor(
                 TwoFingersScrollState.reset()
             }
 
+            MotionEvent.ACTION_DOWN -> {
+                if (motionEvent.pointerCount == 1 &&
+                    motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                ) {
+                    //2e pointeur abaissé
+                    println("GAMMA pointer down")
+                    TwoFingersScrollState.setStartPoint(
+                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                    )
+                }
+            }
+
+//            MotionEvent.ACTION_UP -> {
+//                //2e pointeur est levé
+//                println("GAMMA pointer up")
+//                TwoFingersScrollState.reset()
+//            }
+
             MotionEvent.ACTION_UP -> {
-                //1er pointeur est levé
-                println("GAMMA up")
-                _pointerCount.value = 0
+                if (motionEvent.pointerCount == 1 &&
+                    motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
+                ) {
+                    TwoFingersScrollState.reset()
+                }
+                else {
+                    //1er pointeur est levé
+                    println("GAMMA up")
+                    _pointerCount.value = 0
+                }
             }
 
             MotionEvent.ACTION_CANCEL -> {
