@@ -2,18 +2,11 @@ package lorry.folder.items.memogamma.bubble
 
 import android.content.Context
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
 import com.github.only52607.compose.window.ComposeFloatingWindow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
 
 object BubbleManager {
@@ -22,8 +15,8 @@ object BubbleManager {
 
     val intentChannel = Channel<BubbleIntent>(Channel.UNLIMITED)
     var bubbleState: BubbleState = BubbleState.BUBBLE
-    
-    
+
+
     fun showBubble(context: Context) {
         if (floatingWindow == null) {
             floatingWindow = ComposeFloatingWindow(context.applicationContext).apply {
@@ -34,23 +27,9 @@ object BubbleManager {
                             context.applicationContext
                         )
                     )[BubbleViewModel::class.java]
-                    
-                    var stylusState = viewModel.stylusState.collectAsState()
-//                    var stylusState by remember { mutableStateOf() }
-                    
-                    
 
-//                    LaunchedEffect(Unit) {
-//                        lifecycleScope.launch {
-//                            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-//                                viewModel.stylusState
-//                                    .collect {
-//                                        stylusState = it
-//                                    }
-//                            }
-//                        }
-//                    }
-                    
+                    var stylusState = viewModel.stylusState
+
                     LaunchedEffect(Unit) {
                         intentChannel.consumeAsFlow().collect { intent ->
                             when (intent) {

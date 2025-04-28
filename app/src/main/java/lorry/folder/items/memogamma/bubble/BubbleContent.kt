@@ -69,7 +69,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
         shape = MaterialTheme.shapes.medium,
         color = Color.LightGray,
         tonalElevation = 0.dp,
-        border = BorderStroke(1.dp, Color.DarkGray),
+        //border = BorderStroke(1.dp, Color.DarkGray),
     ) {
         Column(
             modifier = Modifier
@@ -78,6 +78,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
         ) {
             Row(
                 modifier = Modifier
+                    .background(Color.Transparent)
             ) {
                 if (visibilityState != BubbleState.HIDDEN) {
                     FloatingActionButton(
@@ -92,9 +93,11 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                     ) {
                         Icon(
                             modifier = Modifier
+                                .background(Color.Transparent)
+                                .size(35.dp)
                                 .zIndex(0f),
-                            imageVector = if (visibilityState == BubbleState.BUBBLE)
-                                Icons.Default.ThumbUp else Icons.Default.ThumbDown,
+                            painter = if (visibilityState == BubbleState.BUBBLE)
+                                painterResource(R.drawable.extend) else painterResource(R.drawable.group),
                             contentDescription = "Ouvrir / Fermer"
                         )
                     }
