@@ -2,13 +2,12 @@ package lorry.folder.items.memogamma.undoRedo
 
 import androidx.compose.ui.graphics.Color
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import javax.inject.Inject
 
-class StylusColorChange(
+class StylusColorUndoRedo(
     override val oldState: Color, 
     override val newState: Color,
     val viewModel: BubbleViewModel
-) : IUndoRedoChange<Color> {
+) : IUndoRedo<Color> {
     
     override fun doChange() {
         viewModel.setStylusColor(newState)

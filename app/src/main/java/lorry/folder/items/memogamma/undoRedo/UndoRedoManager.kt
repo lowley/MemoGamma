@@ -7,7 +7,7 @@ import kotlin.math.floor
 import kotlin.random.Random
 
 object UndoRedoManager {
-    var items: List<IUndoRedoChange<*>> = emptyList()
+    var items: List<IUndoRedo<*>> = emptyList()
     var position: Float = -1f
     val index: Int
         get() = (position + 0.5).toInt()
@@ -40,7 +40,7 @@ object UndoRedoManager {
         _changeNotifier.value = Random.nextInt(1_000_000_000)
     }
 
-    fun add(change: IUndoRedoChange<*>) {
+    fun add(change: IUndoRedo<*>) {
         if (position >= 0 && position < items.size - 1)
             items = items.subList(0, index)
         items += change
@@ -49,12 +49,12 @@ object UndoRedoManager {
     }
 }
 
-fun List<IUndoRedoChange<*>>.undoChange(position: Float) {
+fun List<IUndoRedo<*>>.undoChange(position: Float) {
     val item = this[floor(position).toInt()]
     item.undoChange()
 }
 
-fun List<IUndoRedoChange<*>>.doChange(position: Float) {
+fun List<IUndoRedo<*>>.doChange(position: Float) {
     val item = this[ceil(position).toInt()]
     item.doChange()
 }

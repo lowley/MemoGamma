@@ -20,9 +20,10 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.bubble.BubbleManager.intentChannel
+import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
+import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 import java.util.UUID
 import javax.inject.Inject
-import javax.inject.Singleton
 
 @HiltViewModel
 class BubbleViewModel @Inject constructor(
@@ -78,14 +79,20 @@ class BubbleViewModel @Inject constructor(
     private var _stylusState = MutableStateFlow(StylusState())
     val stylusState: StateFlow<StylusState> = _stylusState
 
+    var lastStateBeforeStylusDown: StylusState? = null
+
     private fun requestRendering(stylusState: StylusState) {
         _stylusState.value = stylusState
     }
 
-    fun setStylusStroke(stroke: Stroke){
+    fun setStylusStroke(stroke: Stroke) {
         _stylusStroke.value = Stroke(stroke.width)
     }
-    
+
+    fun setStylusState(state: StylusState) {
+        _stylusState.value = state
+    }
+
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
         _pointerCount.update { motionEvent.pointerCount }
         _activePointer.value = motionEvent.actionIndex;
@@ -138,11 +145,16 @@ class BubbleViewModel @Inject constructor(
                         val newItems = state.items.map { item ->
                             val newPath = Path().apply {
                                 addPath(item.path)
-                                transform(Matrix().apply { translate(TwoFingersScrollState.deltaX ?: 0f, TwoFingersScrollState.deltaY ?: 0f) })
+                                transform(Matrix().apply {
+                                    translate(
+                                        TwoFingersScrollState.deltaX ?: 0f,
+                                        TwoFingersScrollState.deltaY ?: 0f
+                                    )
+                                })
                             }
                             item.copy(path = newPath)
                         }.toMutableList()
-                        
+
                         StylusState(newItems)
                     }
                 }
@@ -193,8 +205,7 @@ class BubbleViewModel @Inject constructor(
                     motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
                 ) {
                     TwoFingersScrollState.reset()
-                }
-                else {
+                } else {
                     //1er pointeur est levé
                     println("GAMMA up")
                     _pointerCount.value = 0
@@ -222,20 +233,28 @@ class BubbleViewModel @Inject constructor(
 
             when (motionEvent.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    _stylusState.update { state ->
-                        val items = state.items
-                        items.add(
-                            StylusStatePath(
-                                path = createPath(
-                                    mutableListOf(
-                                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                                    )
-                                ),
-                                color = stylusColor.value,
-                                style = stylusStroke.value
-                            )
+                    lastStateBeforeStylusDown = stylusState.value
+
+                    var newItems: MutableList<StylusStatePath> = mutableListOf()
+                    for (item in stylusState.value.items) {
+                        newItems.add(item)
+                    }
+                    newItems.add(
+                        StylusStatePath(
+                            path = createPath(
+                                mutableListOf(
+                                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                                )
+                            ),
+                            color = stylusColor.value,
+                            style = stylusStroke.value
                         )
-                        StylusState(items)
+                    )
+
+                    val newState = StylusState(newItems)
+
+                    _stylusState.update { state ->
+                        newState
                     }
                 }
 
@@ -259,9 +278,23 @@ class BubbleViewModel @Inject constructor(
                     if (canceled) {
                         cancelLastStroke()
                     } else {
+
+                        var newItems: MutableList<StylusStatePath> = mutableListOf()
+                        for (item in stylusState.value.items) {
+                            newItems.add(item)
+                        }
+
+                        newItems.last().path.lineTo(motionEvent.x, motionEvent.y)
+                        val newState = StylusState(newItems)
+
+                        if (lastStateBeforeStylusDown != null)
+                            UndoRedoManager.add(
+                                DrawingsUndoRedo(lastStateBeforeStylusDown!!, newState, this)
+                            )
+                        lastStateBeforeStylusDown = null
+
                         _stylusState.update { state ->
-                            state.items.last().path.lineTo(motionEvent.x, motionEvent.y)
-                            StylusState(state.items)
+                            newState
                         }
 //                        currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
                     }

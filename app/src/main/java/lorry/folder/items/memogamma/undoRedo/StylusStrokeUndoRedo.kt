@@ -3,11 +3,11 @@ package lorry.folder.items.memogamma.undoRedo
 import androidx.compose.ui.graphics.drawscope.Stroke
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
 
-class StrokeChange(
+class StylusStrokeUndoRedo(
     override val oldState: Stroke, 
     override val newState: Stroke,
     val viewModel: BubbleViewModel)
-    : IUndoRedoChange<Stroke> {
+    : IUndoRedo<Stroke> {
     
     override fun doChange() {
         viewModel.setStylusStroke(newState)

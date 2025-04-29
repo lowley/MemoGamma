@@ -1,7 +1,6 @@
 package lorry.folder.items.memogamma.bubble
 
 import android.graphics.PointF
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,9 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ThumbDown
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -47,8 +43,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
 import lorry.folder.items.memogamma.R
-import lorry.folder.items.memogamma.undoRedo.StrokeChange
-import lorry.folder.items.memogamma.undoRedo.StylusColorChange
+import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
+import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 
 @Composable
@@ -173,10 +169,12 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 //                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName2")
 //                }
+                
                 HorizontalDivider(
                     thickness = 1.dp,
                     color = Color.Black
                 )
+                
                 DrawArea(
                     modifier = Modifier
                         .background(Color.White)
@@ -208,7 +206,7 @@ fun StylusVisualization(
                     if (stylusColor == Color(0xFFA82D2D))
                         return@clickable
                     UndoRedoManager.add(
-                        StylusColorChange(
+                        StylusColorUndoRedo(
                             stylusColor, Color(0xFFA82D2D), viewModel
                         )
                     )
@@ -231,7 +229,7 @@ fun StylusVisualization(
                     if (stylusColor == Color(0xFF429325))
                         return@clickable
                     UndoRedoManager.add(
-                        StylusColorChange(
+                        StylusColorUndoRedo(
                             stylusColor, Color(0xFF429325), viewModel
                         )
                     )
@@ -253,7 +251,7 @@ fun StylusVisualization(
                     if (stylusColor == Color(0xFF5068C2))
                         return@clickable
                     UndoRedoManager.add(
-                        StylusColorChange(
+                        StylusColorUndoRedo(
                             stylusColor, Color(0xFF5068C2), viewModel
                         )
                     )
@@ -275,7 +273,7 @@ fun StylusVisualization(
                     if (stylusColor == Color(0xFF000000))
                         return@clickable
                     UndoRedoManager.add(
-                        StylusColorChange(
+                        StylusColorUndoRedo(
                             stylusColor, Color(0xFF000000), viewModel
                         )
                     )
@@ -319,7 +317,7 @@ fun StylusVisualization(
             onValueChangeFinished = {
                 if (sliderStartValue != null) {
                     UndoRedoManager.add(
-                        StrokeChange(
+                        StylusStrokeUndoRedo(
                             Stroke(sliderStartValue!!),
                             Stroke(stroke.value.width),
                             viewModel
@@ -363,18 +361,18 @@ fun DrawArea(
 data class StylusState(
     var items: MutableList<StylusStatePath> = mutableListOf<StylusStatePath>(),
 ) {
-    fun replaceLastPath(lastItemPath: MutableList<DrawPoint>): StylusState {
-        val newItems = items.mapIndexed { i, item ->
-            if (i == items.lastIndex)
-                StylusStatePath(
-                    path = BubbleViewModel.createPath(lastItemPath),
-                    color = item.color,
-                    style = item.style
-                )
-            else item
-        }
-        return StylusState(newItems.toMutableList())
+    fun copyDeep(): StylusState {
+        val newItems = items.map { item ->
+            StylusStatePath(
+                path = Path().apply { addPath(item.path) }, // nouvelle instance
+                color = item.color,
+                style = item.style
+            )
+        }.toMutableList()
+
+        return StylusState(newItems)
     }
+
 }
 
 data class StylusStatePath(
