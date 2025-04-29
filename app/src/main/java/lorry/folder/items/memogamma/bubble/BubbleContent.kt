@@ -116,6 +116,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 
                 if (visibilityState == BubbleState.TOTAL) {
                     val arrowSize = 30.dp
+                    
                     val a by UndoRedoManager.changeNotifier.collectAsState()
 
                     Icon(
@@ -146,6 +147,19 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         tint = if (UndoRedoManager.items.isNotEmpty() && !UndoRedoManager.currentPositionIsAfterLast())
                             Color.Black else Color.Gray,
                         contentDescription = "redo$a"
+                    )
+
+                    Icon(
+                        modifier = Modifier
+                            .padding(end = 10.dp, top = 5.dp)
+                            .zIndex(0f)
+                            .clickable {
+
+                            }
+                            .size(arrowSize),
+                        painter = painterResource(R.drawable.disque_dur),
+                        tint = Color.Unspecified,
+                        contentDescription = "files"
                     )
                 }
             }
