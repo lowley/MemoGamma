@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -187,6 +189,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StylusVisualization(
     modifier: Modifier = Modifier,
@@ -325,6 +328,14 @@ fun StylusVisualization(
                     )
                     sliderStartValue = null // Remise à zéro pour le prochain glissement
                 }
+            },
+            thumb = {
+                // Le thumb personnalisé, ici une barre verticale de 10x30 dp
+                Box(
+                    modifier = Modifier
+                        .size(width = stroke.value.width.dp, height = 30.dp)
+                        .background(stylusColor, shape = RoundedCornerShape(2.dp))
+                )
             }
         )
     }
