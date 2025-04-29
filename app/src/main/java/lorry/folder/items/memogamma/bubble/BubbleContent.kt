@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
 import lorry.folder.items.memogamma.R
+import lorry.folder.items.memogamma.persistence.PersistencePopup
 import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
 import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
@@ -59,7 +60,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val pointerName2 by viewModel.pointerName2.collectAsState()
     val action by viewModel.pointerAction.collectAsState()
     val activePointer by viewModel.activePointer.collectAsState()
-
+    val showPersistencePopup = remember { mutableStateOf(false) }
+    
     Surface(
         modifier = Modifier
             //.align(Alignment.Center)
@@ -154,13 +156,16 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                             .padding(end = 10.dp, top = 5.dp)
                             .zIndex(0f)
                             .clickable {
-
+                                showPersistencePopup.value = true
                             }
                             .size(arrowSize),
                         painter = painterResource(R.drawable.disque_dur),
                         tint = Color.Unspecified,
                         contentDescription = "files"
                     )
+                    if (showPersistencePopup.value) {
+                        PersistencePopup(showPersistencePopup)
+                    }
                 }
             }
 
