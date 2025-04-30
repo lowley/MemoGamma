@@ -1,6 +1,7 @@
 package lorry.folder.items.memogamma.bubble
 
 import android.graphics.PointF
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,6 +23,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,9 +69,9 @@ fun BubbleContent(viewModel: BubbleViewModel) {
             //.align(Alignment.Center)
             .wrapContentSize(),
         shape = MaterialTheme.shapes.medium,
-        color = Color.LightGray,
+        color = Color(0xFFfefae0),
         tonalElevation = 0.dp,
-        //border = BorderStroke(1.dp, Color.DarkGray),
+        border = BorderStroke(1.dp, Color(0x55d4a373)),
     ) {
         Column(
             modifier = Modifier
@@ -193,7 +195,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 
                 HorizontalDivider(
                     thickness = 1.dp,
-                    color = Color.Black
+                    color = Color(0x88d4a373)
                 )
 
                 DrawArea(
@@ -355,7 +357,11 @@ fun StylusVisualization(
                         .size(width = stroke.value.width.dp, height = 30.dp)
                         .background(stylusColor, shape = RoundedCornerShape(2.dp))
                 )
-            }
+            },
+            colors = SliderDefaults.colors(
+                activeTrackColor = Color(0xFFccd5ae),     // partie gauche
+                inactiveTrackColor = Color(0xFFe9edc9) // partie droite
+            )
         )
     }
 }
@@ -421,8 +427,6 @@ data class StylusState(
     override fun hashCode(): Int {
         return items.hashCode()
     }
-
-
 }
 
 data class StylusStatePath(
