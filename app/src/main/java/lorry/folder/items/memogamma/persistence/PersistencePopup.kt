@@ -11,13 +11,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,10 +31,13 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import lorry.folder.items.memogamma.R
+import lorry.folder.items.memogamma.bubble.BubbleViewModel
+import lorry.folder.items.memogamma.bubble.StylusState
 
 @Composable
 fun PersistencePopup(
     showPopup: MutableState<Boolean>,
+    viewModel: BubbleViewModel
 ) {
     Popup(
         alignment = Alignment.TopCenter,
@@ -53,10 +56,10 @@ fun PersistencePopup(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Body(
-                    modifier = Modifier
+                    modifier = Modifier,
+                    viewModel = viewModel,
+                    showPopup = showPopup
                 )
-
-
 
                 Row(
                     modifier = Modifier
@@ -84,10 +87,14 @@ fun PersistencePopup(
 @Composable
 fun Body(
     modifier: Modifier = Modifier,
-
+    viewModel: BubbleViewModel,
+    showPopup: MutableState<Boolean>
 ){
     val arrowSize = 30.dp
     var newName by remember { mutableStateOf("") }
+    val initialStylusState by viewModel.initialStylusState.collectAsState()
+    val currentStylusState by viewModel.currentStylusState.collectAsState()
+    
     
     Column(
         modifier = Modifier, 
@@ -103,7 +110,11 @@ fun Body(
                     .padding(start = 10.dp, end = 5.dp)
                     .zIndex(0f)
                     .clickable {
-
+                        viewModel.setInitialStylusState(StylusState.DEFAULT)
+                        viewModel.setCurrentStylusState(StylusState(
+                            items = mutableListOf(),
+                        ))
+                        showPopup.value = false
                     }
                     .size(arrowSize),
                 painter = painterResource(R.drawable.ampoule),
@@ -118,6 +129,7 @@ fun Body(
                 onValueChange = {newText:String -> 
                     newName = newText
                 },
+                enabled = initialStylusState != currentStylusState,
                 placeholder = {
                     Text(text = "enregistrer sous..." )
                 }
@@ -131,9 +143,14 @@ fun Body(
                     .clickable {
 
                     }
-                    .size(arrowSize),
+                    .size(arrowSize)
+                    .then(
+                        if (initialStylusState != currentStylusState) Modifier.clickable {
+                        /* action */ 
+                        } else Modifier
+                    ),
                 painter = painterResource(R.drawable.disquette),
-                tint = Color.Unspecified,
+                tint = if (initialStylusState != currentStylusState) Color.Unspecified else Color.Gray,
                 contentDescription = "enregistrer"
             )
             

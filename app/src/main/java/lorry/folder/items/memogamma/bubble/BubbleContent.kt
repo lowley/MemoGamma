@@ -46,8 +46,8 @@ import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
 import lorry.folder.items.memogamma.R
 import lorry.folder.items.memogamma.persistence.PersistencePopup
-import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
 import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
+import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 
 @Composable
@@ -61,7 +61,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val action by viewModel.pointerAction.collectAsState()
     val activePointer by viewModel.activePointer.collectAsState()
     val showPersistencePopup = remember { mutableStateOf(false) }
-    
+
     Surface(
         modifier = Modifier
             //.align(Alignment.Center)
@@ -118,7 +118,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 
                 if (visibilityState == BubbleState.TOTAL) {
                     val arrowSize = 30.dp
-                    
+
                     val a by UndoRedoManager.changeNotifier.collectAsState()
 
                     Icon(
@@ -164,14 +164,14 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         contentDescription = "files"
                     )
                     if (showPersistencePopup.value) {
-                        PersistencePopup(showPersistencePopup)
+                        PersistencePopup(showPersistencePopup, viewModel)
                     }
                 }
             }
 
             if (visibilityState == BubbleState.TOTAL) {
 
-                val stylusState by viewModel.stylusState.collectAsState()
+                val stylusState by viewModel.currentStylusState.collectAsState()
 
                 StylusVisualization(
                     modifier = Modifier
@@ -190,12 +190,12 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 //                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName2")
 //                }
-                
+
                 HorizontalDivider(
                     thickness = 1.dp,
                     color = Color.Black
                 )
-                
+
                 DrawArea(
                     modifier = Modifier
                         .background(Color.White)
@@ -403,16 +403,53 @@ data class StylusState(
         return StylusState(newItems)
     }
 
+    companion object {
+        val DEFAULT = StylusState(mutableListOf())
+    }
+
+    fun isDefault() = this.items == DEFAULT.items
+    
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as StylusState
+
+        return items == other.items
+    }
+
+    override fun hashCode(): Int {
+        return items.hashCode()
+    }
+
+
 }
 
 data class StylusStatePath(
-//    var pressure: Float = 0F,
-//    var orientation: Float = 0F,
-//    var tilt: Float = 0F,
     var path: Path,
     var color: Color,
     var style: Stroke,
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as StylusStatePath
+
+        if (path != other.path) return false
+        if (color != other.color) return false
+        if (style != other.style) return false
+        
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = path.hashCode()
+        result = 31 * result + color.hashCode()
+        result = 31 * result + style.hashCode()
+        return result
+    }
+}
 
 class DrawPoint(
     x: Float,

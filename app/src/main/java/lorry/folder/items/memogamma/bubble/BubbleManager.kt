@@ -28,7 +28,7 @@ object BubbleManager {
                         )
                     )[BubbleViewModel::class.java]
 
-                    var stylusState = viewModel.stylusState
+                    var stylusState = viewModel.currentStylusState
 
                     LaunchedEffect(Unit) {
                         intentChannel.consumeAsFlow().collect { intent ->

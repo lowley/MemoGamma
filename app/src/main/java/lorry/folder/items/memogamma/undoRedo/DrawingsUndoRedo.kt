@@ -9,10 +9,10 @@ class DrawingsUndoRedo(
     val viewModel: BubbleViewModel
 ) : IUndoRedo<StylusState> {
     override fun doChange() {
-        viewModel.setStylusState(newState.copyDeep())
+        viewModel.setCurrentStylusState(newState.copyDeep())
     }
 
     override fun undoChange() {
-        viewModel.setStylusState(oldState.copyDeep())
+        viewModel.setCurrentStylusState(oldState.copyDeep())
     }
 }

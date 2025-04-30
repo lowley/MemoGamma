@@ -76,21 +76,28 @@ class BubbleViewModel @Inject constructor(
 
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private var _stylusState = MutableStateFlow(StylusState())
-    val stylusState: StateFlow<StylusState> = _stylusState
-
+    private var _initialStylusState = MutableStateFlow(StylusState())
+    val initialStylusState: StateFlow<StylusState> = _initialStylusState
+    
+    private var _currentStylusState = MutableStateFlow(StylusState())
+    val currentStylusState: StateFlow<StylusState> = _currentStylusState
+    
     var lastStateBeforeStylusDown: StylusState? = null
 
     private fun requestRendering(stylusState: StylusState) {
-        _stylusState.value = stylusState
+        _currentStylusState.value = stylusState
     }
 
     fun setStylusStroke(stroke: Stroke) {
         _stylusStroke.value = Stroke(stroke.width)
     }
 
-    fun setStylusState(state: StylusState) {
-        _stylusState.value = state
+    fun setInitialStylusState(state: StylusState) {
+        _currentStylusState.value = state
+    }
+    
+    fun setCurrentStylusState(state: StylusState) {
+        _currentStylusState.value = state
     }
 
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
@@ -141,7 +148,7 @@ class BubbleViewModel @Inject constructor(
                         DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
                     )
 
-                    _stylusState.update { state ->
+                    _currentStylusState.update { state ->
                         val newItems = state.items.map { item ->
                             val newPath = Path().apply {
                                 addPath(item.path)
@@ -160,7 +167,7 @@ class BubbleViewModel @Inject constructor(
                 }
 
                 requestRendering(
-                    stylusState.value
+                    currentStylusState.value
                 )
 
                 TwoFingersScrollState.setStartPoint(
@@ -233,10 +240,10 @@ class BubbleViewModel @Inject constructor(
 
             when (motionEvent.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
-                    lastStateBeforeStylusDown = stylusState.value
+                    lastStateBeforeStylusDown = currentStylusState.value
 
                     var newItems: MutableList<StylusStatePath> = mutableListOf()
-                    for (item in stylusState.value.items) {
+                    for (item in currentStylusState.value.items) {
                         newItems.add(item)
                     }
                     newItems.add(
@@ -253,13 +260,13 @@ class BubbleViewModel @Inject constructor(
 
                     val newState = StylusState(newItems)
 
-                    _stylusState.update { state ->
+                    _currentStylusState.update { state ->
                         newState
                     }
                 }
 
                 MotionEvent.ACTION_MOVE -> {
-                    _stylusState.update { state ->
+                    _currentStylusState.update { state ->
                         val items = state.items.toMutableList()
                         val lastItem = items.last()
                         val newPath = Path().apply {
@@ -280,7 +287,7 @@ class BubbleViewModel @Inject constructor(
                     } else {
 
                         var newItems: MutableList<StylusStatePath> = mutableListOf()
-                        for (item in stylusState.value.items) {
+                        for (item in currentStylusState.value.items) {
                             newItems.add(item)
                         }
 
@@ -293,7 +300,7 @@ class BubbleViewModel @Inject constructor(
                             )
                         lastStateBeforeStylusDown = null
 
-                        _stylusState.update { state ->
+                        _currentStylusState.update { state ->
                             newState
                         }
 //                        currentPath.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
@@ -310,7 +317,7 @@ class BubbleViewModel @Inject constructor(
         }
 
         requestRendering(
-            stylusState.value
+            currentStylusState.value
 //            StylusState(
 //                tilt = motionEvent.getAxisValue(MotionEvent.AXIS_TILT),
 //                pressure = motionEvent.pressure,
@@ -333,7 +340,7 @@ class BubbleViewModel @Inject constructor(
 
     private fun cancelLastStroke() {
         // Find the last START event.
-        _stylusState.update { state ->
+        _currentStylusState.update { state ->
             state.apply {
                 if (items.size >= 1)
                     items.mapIndexedNotNull { i, item ->
