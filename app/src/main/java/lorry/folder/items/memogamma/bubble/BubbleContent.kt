@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -39,7 +40,9 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -82,26 +85,42 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                 modifier = Modifier
                     .background(Color.Transparent)
             ) {
+                val haptic = LocalHapticFeedback.current
+
                 if (visibilityState != BubbleState.HIDDEN) {
                     FloatingActionButton(
                         modifier = Modifier
                             .alignByBaseline()
                             .dragFloatingWindow()
                             .zIndex(0f)
-                            .size(40.dp), // au-dessus
-                        onClick = {
-                            BubbleManager.toggleBubbleTotal()
-                        }
+                            .size(40.dp),
+                        onClick = {}
                     ) {
-                        Icon(
+                        Box(
                             modifier = Modifier
-                                .background(Color.Transparent)
-                                .size(35.dp)
-                                .zIndex(0f),
-                            painter = if (visibilityState == BubbleState.BUBBLE)
-                                painterResource(R.drawable.extend) else painterResource(R.drawable.group),
-                            contentDescription = "Ouvrir / Fermer"
-                        )
+                                .fillMaxSize()
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            BubbleManager.toggleBubbleTotal()
+                                        },
+                                        onLongPress = {
+                                            BubbleManager.hide()
+                                        }
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                modifier = Modifier
+                                    .background(Color.Transparent)
+                                    .size(35.dp)
+                                    .zIndex(0f),
+                                painter = if (visibilityState == BubbleState.BUBBLE)
+                                    painterResource(R.drawable.extend) else painterResource(R.drawable.group),
+                                contentDescription = "Ouvrir / Fermer"
+                            )
+                        }
                     }
                 }
 
@@ -414,7 +433,7 @@ data class StylusState(
     }
 
     fun isDefault() = this.items == DEFAULT.items
-    
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -443,7 +462,7 @@ data class StylusStatePath(
         if (path != other.path) return false
         if (color != other.color) return false
         if (style != other.style) return false
-        
+
         return true
     }
 
