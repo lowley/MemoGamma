@@ -17,7 +17,7 @@
                 android:name=".ui.MainActivity"
                 android:exported="true"
                 android:label="@string/app_name"
-                android:theme="@style/Theme.MemoGamma">
+                android:theme="@android:style/Theme.Translucent.NoTitleBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -27,3 +27,5 @@
     </application>
 
 </manifest>
+
+        <!--                android:theme="@style/Theme.MemoGamma"-->

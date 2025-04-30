@@ -8,13 +8,9 @@ import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import lorry.folder.items.memogamma.bubble.BubbleManager
 import lorry.folder.items.memogamma.ui.theme.MemoGammaTheme
 
@@ -24,19 +20,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MemoGammaTheme {
-                Scaffold(modifier = Modifier.Companion.fillMaxSize()) { innerPadding ->
-                    askOverlayPermission(this)
-                    BubbleManager.showBubble(this) 
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.Companion.padding(innerPadding)
-                    )
-                }
+                askOverlayPermission(this)
+                BubbleManager.showBubble(this)
+                finish()
             }
         }
     }
-    
-    fun askOverlayPermission(context: Context){
+
+    fun askOverlayPermission(context: Context) {
         if (!Settings.canDrawOverlays(context)) {
             val intent = Intent(
                 Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
@@ -47,8 +38,8 @@ class MainActivity : ComponentActivity() {
             return
         }
     }
-    
-    
+
+
 }
 
 @Composable
