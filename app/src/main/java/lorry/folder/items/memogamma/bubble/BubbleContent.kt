@@ -40,6 +40,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -49,11 +50,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
+import kotlinx.serialization.Serializable
 import lorry.folder.items.memogamma.R
+import lorry.folder.items.memogamma.StylusStatePathProto
+import lorry.folder.items.memogamma.StylusStateProto
 import lorry.folder.items.memogamma.persistence.PersistencePopup
 import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
 import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
+import androidx.core.graphics.toColorInt
+import lorry.folder.items.memogamma.PointInfo
 
 @Composable
 fun BubbleContent(viewModel: BubbleViewModel) {
@@ -390,7 +396,7 @@ fun StylusVisualization(
 fun DrawArea(
     modifier: Modifier = Modifier,
     viewModel: BubbleViewModel,
-    stylusState: StylusState,
+    stylusState: StylusStateDto,
 ) {
     Canvas(
         modifier = modifier
@@ -413,23 +419,25 @@ fun DrawArea(
     }
 }
 
-data class StylusState(
-    var items: MutableList<StylusStatePath> = mutableListOf<StylusStatePath>(),
+data class StylusStateDto(
+    var name: String = "",
+    var items: MutableList<StylusStatePathDto> = mutableListOf<StylusStatePathDto>(),
 ) {
-    fun copyDeep(): StylusState {
+    fun copyDeep(): StylusStateDto {
         val newItems = items.map { item ->
-            StylusStatePath(
+            StylusStatePathDto(
                 path = Path().apply { addPath(item.path) }, // nouvelle instance
                 color = item.color,
-                style = item.style
+                style = item.style,
+                pointList = item.pointList.toMutableList()
             )
         }.toMutableList()
 
-        return StylusState(newItems)
+        return StylusStateDto(name, newItems)
     }
 
     companion object {
-        val DEFAULT = StylusState(mutableListOf())
+        val DEFAULT = StylusStateDto("Défaut", mutableListOf())
     }
 
     fun isDefault() = this.items == DEFAULT.items
@@ -438,7 +446,7 @@ data class StylusState(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as StylusState
+        other as StylusStateDto
 
         return items == other.items
     }
@@ -448,8 +456,9 @@ data class StylusState(
     }
 }
 
-data class StylusStatePath(
+data class StylusStatePathDto(
     var path: Path,
+    var pointList: List<PointInfoDto>,
     var color: Color,
     var style: Stroke,
 ) {
@@ -457,7 +466,7 @@ data class StylusStatePath(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as StylusStatePath
+        other as StylusStatePathDto
 
         if (path != other.path) return false
         if (color != other.color) return false
@@ -473,6 +482,18 @@ data class StylusStatePath(
         return result
     }
 }
+
+data class PointInfoDto(
+    val x: Float,
+    val y: Float,
+    val pointType: DrawPointType
+)
+
+data class StylusStatePathDTO(
+    val pathData: List<PointInfoDto>,
+    val colorHex: String, // encodage de la couleur en "#RRGGBB"
+    val strokeWidth: Float
+)
 
 class DrawPoint(
     x: Float,
@@ -536,6 +557,71 @@ data class TwoFingersScrollState(
         }
     }
 }
+
+fun StylusStateDto.toProto(): StylusStateProto =
+    StylusStateProto.newBuilder()
+        .setName(this.name)
+        .addAllPaths(this.items.map { it.toProto() })
+        .build()
+
+fun StylusStatePathDto.toProto(): StylusStatePathProto =
+    StylusStatePathProto.newBuilder()
+        .addAllPathData(this.pointList.map {
+            PointInfo.newBuilder()
+                .setX(it.x)
+                .setY(it.y)
+                .setType(it.pointType.toString())
+                .build()
+        })
+        .setColorHex("#%06X".format(0xFFFFFF and this.color.toArgb()))
+        .setStrokeWidth(this.style.width)
+        .build()
+
+fun PointInfoDto.toProto(): PointInfo =
+    PointInfo.newBuilder()
+        .setX(x)
+        .setY(y)
+        .setType(pointType.toString())
+        .build()
+
+fun StylusStateProto.toStylusState(): StylusStateDto =
+    StylusStateDto(
+        name = this.name,
+        items = this.pathsList.map { it.toStylusStatePath() }.toMutableList()
+    )
+
+fun StylusStatePathProto.toStylusStatePath(): StylusStatePathDto{
+    val points = this.pathDataList.map {
+        PointInfoDto(it.x, it.y,
+            when (it.type) {
+                "Start" -> DrawPointType.START
+                "Line" -> DrawPointType.LINE
+                else -> DrawPointType.LINE
+            }
+        )
+    }
+    
+    var path = BubbleViewModel.createPath(this.pathDataList.map {
+        DrawPoint(
+            it.x, it.y,
+            when (it.type) {
+                "Start" -> DrawPointType.START
+                "Line" -> DrawPointType.LINE
+                else -> DrawPointType.LINE
+            }
+        )
+    }.toMutableList())
+    
+    val result = StylusStatePathDto(
+        pointList = points,
+        color = Color(colorHex.toColorInt()),
+        style = Stroke(this.strokeWidth),
+        path = path
+    )
+    
+    return result
+}
+    
 
 
 

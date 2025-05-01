@@ -7,6 +7,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.datastore.core.DataStore
+import androidx.datastore.dataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,11 +16,16 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import lorry.folder.items.memogamma.StylusStateStore
+import lorry.folder.items.memogamma.__data.userPreferences.StylusStateSerializer
 import lorry.folder.items.memogamma.bubble.BubbleManager.intentChannel
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
@@ -28,6 +35,7 @@ import javax.inject.Inject
 @HiltViewModel
 class BubbleViewModel @Inject constructor(
     @ApplicationContext val context: Context,
+    provider: StylusStoreProvider
 ) : ViewModel() {
 
     companion object {
@@ -76,15 +84,22 @@ class BubbleViewModel @Inject constructor(
 
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private var _initialStylusState = MutableStateFlow(StylusState())
-    val initialStylusState: StateFlow<StylusState> = _initialStylusState
-    
-    private var _currentStylusState = MutableStateFlow(StylusState())
-    val currentStylusState: StateFlow<StylusState> = _currentStylusState
-    
-    var lastStateBeforeStylusDown: StylusState? = null
+    private var _initialStylusState = MutableStateFlow(StylusStateDto())
+    val initialStylusState: StateFlow<StylusStateDto> = _initialStylusState
 
-    private fun requestRendering(stylusState: StylusState) {
+    private var _currentStylusState = MutableStateFlow(StylusStateDto())
+    val currentStylusState: StateFlow<StylusStateDto> = _currentStylusState
+
+    var lastStateBeforeStylusDown: StylusStateDto? = null
+
+    private val dataStore = provider.store as DataStore<StylusStateStore>
+    
+    val stylusStateFlow: Flow<List<StylusStateDto>> =
+        dataStore.data.map { store ->
+            store.drawingsList.map { it.toStylusState() }
+        }
+
+    private fun requestRendering(stylusState: StylusStateDto) {
         _currentStylusState.value = stylusState
     }
 
@@ -92,11 +107,11 @@ class BubbleViewModel @Inject constructor(
         _stylusStroke.value = Stroke(stroke.width)
     }
 
-    fun setInitialStylusState(state: StylusState) {
+    fun setInitialStylusState(state: StylusStateDto) {
         _currentStylusState.value = state
     }
-    
-    fun setCurrentStylusState(state: StylusState) {
+
+    fun setCurrentStylusState(state: StylusStateDto) {
         _currentStylusState.value = state
     }
 
@@ -149,7 +164,7 @@ class BubbleViewModel @Inject constructor(
                     )
 
                     _currentStylusState.update { state ->
-                        val newItems = state.items.map { item ->
+                        val newItems = state.items.map{ item: StylusStatePathDto ->
                             val newPath = Path().apply {
                                 addPath(item.path)
                                 transform(Matrix().apply {
@@ -162,7 +177,7 @@ class BubbleViewModel @Inject constructor(
                             item.copy(path = newPath)
                         }.toMutableList()
 
-                        StylusState(newItems)
+                        StylusStateDto(state.name, newItems)
                     }
                 }
 
@@ -242,23 +257,30 @@ class BubbleViewModel @Inject constructor(
                 MotionEvent.ACTION_DOWN -> {
                     lastStateBeforeStylusDown = currentStylusState.value
 
-                    var newItems: MutableList<StylusStatePath> = mutableListOf()
+                    var newItems: MutableList<StylusStatePathDto> = mutableListOf()
                     for (item in currentStylusState.value.items) {
                         newItems.add(item)
                     }
                     newItems.add(
-                        StylusStatePath(
+                        StylusStatePathDto(
                             path = createPath(
                                 mutableListOf(
                                     DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
                                 )
                             ),
                             color = stylusColor.value,
-                            style = stylusStroke.value
+                            style = stylusStroke.value,
+                            pointList = listOf(
+                                PointInfoDto(
+                                    x = motionEvent.x,
+                                    y = motionEvent.y,
+                                    pointType = DrawPointType.START
+                                )
+                            )
                         )
                     )
 
-                    val newState = StylusState(newItems)
+                    val newState = StylusStateDto(currentStylusState.value.name, newItems)
 
                     _currentStylusState.update { state ->
                         newState
@@ -267,14 +289,26 @@ class BubbleViewModel @Inject constructor(
 
                 MotionEvent.ACTION_MOVE -> {
                     _currentStylusState.update { state ->
+                        var newPointInfo = state.items.last().pointList
+                        newPointInfo = newPointInfo.toMutableList()
+                        newPointInfo.add(
+                            PointInfoDto(
+                                x = motionEvent.x,
+                                y = motionEvent.y,
+                                pointType = DrawPointType.LINE
+                            )
+                        )
+
                         val items = state.items.toMutableList()
                         val lastItem = items.last()
                         val newPath = Path().apply {
                             addPath(lastItem.path)
                             lineTo(motionEvent.x, motionEvent.y)
                         }
-                        items.add(lastItem.copy(path = newPath))
-                        StylusState(items)
+
+                        items.add(lastItem.copy(path = newPath, pointList = newPointInfo))
+
+                        StylusStateDto(state.name, items)
                     }
                 }
 
@@ -286,13 +320,24 @@ class BubbleViewModel @Inject constructor(
                         cancelLastStroke()
                     } else {
 
-                        var newItems: MutableList<StylusStatePath> = mutableListOf()
+                        var newItems: MutableList<StylusStatePathDto> = mutableListOf()
                         for (item in currentStylusState.value.items) {
                             newItems.add(item)
                         }
 
                         newItems.last().path.lineTo(motionEvent.x, motionEvent.y)
-                        val newState = StylusState(newItems)
+                        newItems.last().apply {
+                            pointList = pointList.toMutableList().apply {
+                                add(
+                                    PointInfoDto(
+                                        x = motionEvent.x,
+                                        y = motionEvent.y,
+                                        pointType = DrawPointType.LINE
+                                    )
+                                )
+                            }
+                        }
+                        val newState = StylusStateDto(currentStylusState.value.name, newItems)
 
                         if (lastStateBeforeStylusDown != null)
                             UndoRedoManager.add(
@@ -356,6 +401,20 @@ class BubbleViewModel @Inject constructor(
         _stylusColor.value = color
     }
 
+    fun saveStylusState(state: StylusStateDto, fileName: String) {
+        var stateProto = state.copy(name = fileName).toProto()
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                dataStore.updateData { current ->
+                    var builder = current.toBuilder()
+                    builder.addDrawings(stateProto)
+                    builder.build()
+                }
+            }
+        }
+    }
+
     init {
         println("THOO: init() exécutée...")
         create()
@@ -391,4 +450,19 @@ fun Path.translate(dx: Float, dy: Float): Path {
     matrix.translate(dx, dy)
     this.transform(matrix)
     return this
+}
+
+val Context.stylusStateDataStore: DataStore<StylusStateStore> by dataStore(
+    fileName = "stylus_states.pb",
+    serializer = StylusStateSerializer
+)
+
+interface StylusStoreProvider {
+    val store: DataStore<*>
+}
+
+class StylusStoreProviderImpl @Inject constructor(
+    @ApplicationContext private val context: Context
+) : StylusStoreProvider {
+    override val store: DataStore<*> = context.stylusStateDataStore
 }
