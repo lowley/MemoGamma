@@ -414,22 +414,28 @@ fun DrawArea(
 }
 
 data class StylusState(
+    var name: String,
     var items: MutableList<StylusStatePath> = mutableListOf<StylusStatePath>(),
 ) {
     fun copyDeep(): StylusState {
         val newItems = items.map { item ->
             StylusStatePath(
                 path = Path().apply { addPath(item.path) }, // nouvelle instance
-                color = item.color,
-                style = item.style
+                color = Color(item.color.value),
+                style = Stroke(item.style.width),
+                pointList = item.pointList.map { DrawPoint(
+                    it.x,
+                    it.y,
+                    it.type
+                ) }
             )
         }.toMutableList()
 
-        return StylusState(newItems)
+        return StylusState(this.name, newItems)
     }
 
     companion object {
-        val DEFAULT = StylusState(mutableListOf())
+        val DEFAULT = StylusState("Défaut", mutableListOf())
     }
 
     fun isDefault() = this.items == DEFAULT.items
@@ -440,11 +446,11 @@ data class StylusState(
 
         other as StylusState
 
-        return items == other.items
+        return items == other.items && name == other.name
     }
 
     override fun hashCode(): Int {
-        return items.hashCode()
+        return items.hashCode() + name.hashCode()
     }
 }
 
@@ -452,6 +458,7 @@ data class StylusStatePath(
     var path: Path,
     var color: Color,
     var style: Stroke,
+    var pointList: List<DrawPoint>,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

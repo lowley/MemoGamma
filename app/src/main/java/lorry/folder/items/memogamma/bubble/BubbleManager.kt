@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModelStore
 import com.github.only52607.compose.window.ComposeFloatingWindow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
+import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
 
 object BubbleManager {
@@ -19,12 +20,13 @@ object BubbleManager {
 
     fun showBubble(context: Context) {
         if (floatingWindow == null) {
+            val userPreferences = UserPreferences(context.applicationContext)
             floatingWindow = ComposeFloatingWindow(context.applicationContext).apply {
                 setContent {
                     viewModel = ViewModelProvider(
                         ViewModelStore(),
                         VideoShortcutsBubbleViewModelFactory(
-                            context.applicationContext
+                            context.applicationContext, userPreferences
                         )
                     )[BubbleViewModel::class.java]
 

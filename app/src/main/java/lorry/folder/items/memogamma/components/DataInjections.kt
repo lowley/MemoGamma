@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import dagger.Module
 import dagger.hilt.InstallIn
+import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
+import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
 
 @Module
@@ -77,19 +79,20 @@ class DataInjections2 {
 //        )
 //    }
 //
-//    @dagger.Provides
-//    @javax.inject.Singleton
-//    fun provideDSIUserPreferences(@dagger.hilt.android.qualifiers.ApplicationContext context: Context): DSI_UserPreferences {
-//        return DS_UserPreferences(context)
-//    }
+    @dagger.Provides
+    @javax.inject.Singleton
+    fun provideDSIUserPreferences(@dagger.hilt.android.qualifiers.ApplicationContext context: Context): IUserPreferences {
+        return UserPreferences(context)
+    }
 }
 
 class VideoShortcutsBubbleViewModelFactory(
     private val context: Context,
+    private val userPreferences: IUserPreferences
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(BubbleViewModel::class.java)) {
-            return BubbleViewModel(context) as T
+            return BubbleViewModel(context, userPreferences) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

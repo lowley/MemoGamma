@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -112,6 +115,7 @@ fun Body(
                     .clickable {
                         viewModel.setInitialStylusState(StylusState.DEFAULT)
                         viewModel.setCurrentStylusState(StylusState(
+                            name = "",
                             items = mutableListOf(),
                         ))
                         showPopup.value = false
@@ -140,25 +144,38 @@ fun Body(
                     .align(Alignment.CenterVertically)
                     .padding(start = 5.dp, end = 10.dp)
                     .zIndex(0f)
-                    .clickable {
-
-                    }
                     .size(arrowSize)
                     .then(
-                        if (initialStylusState != currentStylusState) Modifier.clickable {
-                        /* action */ 
+                        if (initialStylusState != currentStylusState
+                            && newName.isNotEmpty()
+                        ) 
+                            Modifier.clickable {
+                            viewModel.saveCurrentStateAs(newName)
                         } else Modifier
                     ),
                 painter = painterResource(R.drawable.disquette),
                 tint = if (initialStylusState != currentStylusState) Color.Unspecified else Color.Gray,
                 contentDescription = "enregistrer"
             )
-            
-            
-            
-            
         }
+
+        val state by viewModel.drawings.collectAsState(emptySet())
+        val listState = rememberLazyListState()
         
-        
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(250.dp),
+            state = listState,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(state.size) { index ->
+                val drawing = state.elementAt(index)
+                Text(
+                    text = drawing.name,
+                    modifier = Modifier
+                )
+            }
+        }
     }
 }
