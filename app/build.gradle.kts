@@ -1,13 +1,9 @@
-import com.google.protobuf.gradle.proto
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
-    id("com.google.protobuf") version "0.9.4"
-    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -67,41 +63,6 @@ android {
             dirs("libs")
         }
     }
-
-    sourceSets["main"].proto{
-        srcDir("src/main/proto")
-    }
-
-    sourceSets {
-        named("main") {
-            java.srcDir("build/generated/source/proto/debug/java")
-        }
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:3.14.0"
-    }
-    generateProtoTasks {
-        all().forEach {
-            it.builtins {
-                create("java") {
-                    option("lite")
-                }
-            }
-        }
-    }
-}
-
-ksp {
-    arg("ksp.generated", "$buildDir/generated/source/proto/main/java")
-}
-
-afterEvaluate {
-    tasks.named("kspDebugKotlin") {
-        dependsOn("generateDebugProto")
-    }
 }
 
 dependencies {
@@ -135,11 +96,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation(libs.buttontogglegroup)
     implementation("com.github.only52607:compose-floating-window:1.0")
-//    implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.datastore.preferences)
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
-
-    implementation("androidx.datastore:datastore:1.0.0")
-    implementation("androidx.datastore:datastore-core:1.0.0")
-    implementation("com.google.protobuf:protobuf-javalite:3.14.0") // ou plus récent
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
 }

@@ -1,31 +1,16 @@
 package lorry.folder.items.memogamma.components
 
 import android.content.Context
-import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import lorry.folder.items.memogamma.StylusStateStore
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import lorry.folder.items.memogamma.bubble.StylusStoreProvider
-import lorry.folder.items.memogamma.bubble.StylusStoreProviderImpl
-import lorry.folder.items.memogamma.bubble.stylusStateDataStore
-import javax.inject.Singleton
 
 @Module
 @InstallIn(dagger.hilt.components.SingletonComponent::class)
 abstract class DataInjections {
-
-    @Binds
-    @Singleton
-    abstract fun bindStylusStoreProvider(
-        impl: StylusStoreProviderImpl
-    ): StylusStoreProvider
-    
+//
 //    @dagger.Binds
 //    abstract fun bindFileAccessDataSource(
 //        fileAccessDataSource: FileAccessDS
@@ -56,14 +41,6 @@ abstract class DataInjections {
 @dagger.Module
 @dagger.hilt.InstallIn(dagger.hilt.components.SingletonComponent::class)
 class DataInjections2 {
-
-    @Provides
-    @Singleton
-    fun provideStylusStateDataStore(
-        @ApplicationContext context: Context
-    ): DataStore<StylusStateStore> =
-        context.stylusStateDataStore // extension déjà définie
-    
 //    @dagger.Provides
 //    @javax.inject.Singleton
 //    fun bindIntent(): Intent {
@@ -109,11 +86,10 @@ class DataInjections2 {
 
 class VideoShortcutsBubbleViewModelFactory(
     private val context: Context,
-    private val provider: StylusStoreProvider
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(BubbleViewModel::class.java)) {
-            return BubbleViewModel(context, provider) as T
+            return BubbleViewModel(context) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

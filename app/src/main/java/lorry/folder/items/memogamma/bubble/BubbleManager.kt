@@ -19,13 +19,12 @@ object BubbleManager {
 
     fun showBubble(context: Context) {
         if (floatingWindow == null) {
-            floatingWindow = ComposeFloatingWindow(context).apply {
+            floatingWindow = ComposeFloatingWindow(context.applicationContext).apply {
                 setContent {
-                    val provider = StylusStoreProviderImpl(context)
                     viewModel = ViewModelProvider(
                         ViewModelStore(),
                         VideoShortcutsBubbleViewModelFactory(
-                            context.applicationContext, provider
+                            context.applicationContext
                         )
                     )[BubbleViewModel::class.java]
 

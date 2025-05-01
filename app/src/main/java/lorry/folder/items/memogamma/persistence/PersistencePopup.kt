@@ -30,19 +30,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
-import kotlinx.coroutines.flow.last
 import lorry.folder.items.memogamma.R
-import lorry.folder.items.memogamma.StylusStatePathProto
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import lorry.folder.items.memogamma.bubble.StylusStateDto
+import lorry.folder.items.memogamma.bubble.StylusState
 
 @Composable
 fun PersistencePopup(
     showPopup: MutableState<Boolean>,
     viewModel: BubbleViewModel
 ) {
-    val items by viewModel.stylusStateFlow.collectAsState(initial = emptyList())
-    
     Popup(
         alignment = Alignment.TopCenter,
         properties = PopupProperties(focusable = true)
@@ -60,9 +56,9 @@ fun PersistencePopup(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Body(
+                    modifier = Modifier,
                     viewModel = viewModel,
-                    showPopup = showPopup,
-                    items = items
+                    showPopup = showPopup
                 )
 
                 Row(
@@ -92,8 +88,7 @@ fun PersistencePopup(
 fun Body(
     modifier: Modifier = Modifier,
     viewModel: BubbleViewModel,
-    showPopup: MutableState<Boolean>,
-    items: List<StylusStateDto>
+    showPopup: MutableState<Boolean>
 ){
     val arrowSize = 30.dp
     var newName by remember { mutableStateOf("") }
@@ -105,6 +100,7 @@ fun Body(
         modifier = Modifier, 
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+     
         Row(
             modifier = Modifier
         ){
@@ -114,8 +110,8 @@ fun Body(
                     .padding(start = 10.dp, end = 5.dp)
                     .zIndex(0f)
                     .clickable {
-                        viewModel.setInitialStylusState(StylusStateDto.DEFAULT)
-                        viewModel.setCurrentStylusState(StylusStateDto(
+                        viewModel.setInitialStylusState(StylusState.DEFAULT)
+                        viewModel.setCurrentStylusState(StylusState(
                             items = mutableListOf(),
                         ))
                         showPopup.value = false
@@ -145,7 +141,7 @@ fun Body(
                     .padding(start = 5.dp, end = 10.dp)
                     .zIndex(0f)
                     .clickable {
-                        viewModel.saveStylusState(currentStylusState, newName)
+
                     }
                     .size(arrowSize)
                     .then(
@@ -163,7 +159,6 @@ fun Body(
             
         }
         
-        Text(text = items.size.toString())
+        
     }
 }
-
