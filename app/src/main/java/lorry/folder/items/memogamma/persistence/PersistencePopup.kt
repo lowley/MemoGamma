@@ -21,12 +21,13 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -92,21 +93,21 @@ fun Body(
     modifier: Modifier = Modifier,
     viewModel: BubbleViewModel,
     showPopup: MutableState<Boolean>
-){
+) {
     val arrowSize = 30.dp
     var newName by remember { mutableStateOf("") }
     val initialStylusState by viewModel.initialStylusState.collectAsState()
     val currentStylusState by viewModel.currentStylusState.collectAsState()
-    
-    
+    val sheets by viewModel.drawings.collectAsState(emptySet())
+
     Column(
-        modifier = Modifier, 
+        modifier = Modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-     
+
         Row(
             modifier = Modifier
-        ){
+        ) {
             Icon(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
@@ -114,10 +115,12 @@ fun Body(
                     .zIndex(0f)
                     .clickable {
                         viewModel.setInitialStylusState(StylusState.DEFAULT)
-                        viewModel.setCurrentStylusState(StylusState(
-                            name = "",
-                            items = mutableListOf(),
-                        ))
+                        viewModel.setCurrentStylusState(
+                            StylusState(
+                                name = "",
+                                items = mutableListOf(),
+                            )
+                        )
                         showPopup.value = false
                     }
                     .size(arrowSize),
@@ -130,14 +133,18 @@ fun Body(
                 modifier = Modifier
                     .weight(1f),
                 value = newName,
-                onValueChange = {newText:String -> 
+                onValueChange = { newText: String ->
                     newName = newText
                 },
                 enabled = initialStylusState != currentStylusState,
                 placeholder = {
-                    Text(text = "enregistrer sous..." )
+                    Text(text = "enregistrer sous...")
                 }
             )
+
+            val isClickable = initialStylusState != currentStylusState
+                    && newName.isNotBlank()
+                    && !sheets.any { it.name == newName }
             
             Icon(
                 modifier = Modifier
@@ -145,23 +152,18 @@ fun Body(
                     .padding(start = 5.dp, end = 10.dp)
                     .zIndex(0f)
                     .size(arrowSize)
-                    .then(
-                        if (initialStylusState != currentStylusState
-                            && newName.isNotEmpty()
-                        ) 
-                            Modifier.clickable {
-                            viewModel.saveCurrentStateAs(newName)
-                        } else Modifier
-                    ),
+                    .then(if (isClickable) Modifier.clickable {
+                        viewModel.saveCurrentStateAs(newName)
+                    } else Modifier)
+                    .alpha(if (isClickable) 1f else 0.3f),
                 painter = painterResource(R.drawable.disquette),
                 tint = if (initialStylusState != currentStylusState) Color.Unspecified else Color.Gray,
                 contentDescription = "enregistrer"
             )
         }
 
-        val state by viewModel.drawings.collectAsState(emptySet())
         val listState = rememberLazyListState()
-        
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
@@ -169,8 +171,8 @@ fun Body(
             state = listState,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(state.size) { index ->
-                val drawing = state.elementAt(index)
+            items(sheets.size) { index ->
+                val drawing = sheets.elementAt(index)
                 Text(
                     text = drawing.name,
                     modifier = Modifier
