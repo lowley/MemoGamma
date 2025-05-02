@@ -239,7 +239,7 @@ fun Body(
                                 .alpha(if (canUpdate) 1f else 0.3f),
                             painter = painterResource(R.drawable.disquette),
                             tint = Color(0xFFccd5ae),
-                            contentDescription = "save"
+                            contentDescription = "enregistrer"
                         )
 
 
