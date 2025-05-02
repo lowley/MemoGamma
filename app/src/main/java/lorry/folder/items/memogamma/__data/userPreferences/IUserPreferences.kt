@@ -12,4 +12,5 @@ interface IUserPreferences {
     suspend fun save_sheets(values: Set<StylusState>)
     suspend fun add_sheet(sheet: StylusState)
     suspend fun update_sheet(sheet: StylusState)
+    suspend fun remove_sheet(sheet: StylusState)
 }

@@ -93,7 +93,7 @@ class BubbleViewModel @Inject constructor(
 
     private val _recomposePopupTrigger = MutableStateFlow(false)
     val recomposePopupTrigger: StateFlow<Boolean> = _recomposePopupTrigger
-    
+
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
     }
@@ -344,15 +344,7 @@ class BubbleViewModel @Inject constructor(
             }
         }
 
-        requestRendering(
-            currentStylusState.value
-//            StylusState(
-//                tilt = motionEvent.getAxisValue(MotionEvent.AXIS_TILT),
-//                pressure = motionEvent.pressure,
-//                orientation = motionEvent.orientation,
-//                path = createPath(currentPath)
-//            )
-        )
+        requestRendering(currentStylusState.value)
 
         return true
     }
@@ -406,7 +398,9 @@ class BubbleViewModel @Inject constructor(
     }
 
     fun deleteDrawing(state: StylusState) {
-
+        viewModelScope.launch {
+            userPreferences.remove_sheet(state)
+        }
     }
 
     init {

@@ -251,8 +251,7 @@ fun Body(
                                 .clickable {
                                     viewModel.deleteDrawing(drawing)
                                     //toast
-                                    viewModel.setPersistencePopupVisible(false)
-                                    viewModel.changeRecomposePopupTrigger()
+                                    //viewModel.changeRecomposePopupTrigger()
                                 },
                             painter = painterResource(R.drawable.poubelle),
                             tint = Color(0xFFccd5ae),

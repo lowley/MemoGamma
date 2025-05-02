@@ -70,6 +70,14 @@ open class UserPreferences @javax.inject.Inject constructor(private val context:
         }
     }
 
+    override suspend fun remove_sheet(sheet: StylusState) {
+        withContext(Dispatchers.IO) {
+            var existingSheets = sheetsDTO.first()
+            existingSheets = existingSheets.minus(sheet.toDTO())
+            save_sheetsDTO(existingSheets)
+        }
+    }
+
     override suspend fun update_sheet(sheet: StylusState) {
         withContext(Dispatchers.IO) {
             var existingSheets = sheets.first()
