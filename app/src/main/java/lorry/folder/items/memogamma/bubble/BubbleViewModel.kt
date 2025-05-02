@@ -78,10 +78,12 @@ class BubbleViewModel @Inject constructor(
 
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private var _initialStylusState = MutableStateFlow(StylusState(""))
+    private var _initialStylusState = MutableStateFlow(StylusState(
+        StylusState.DEFAULT.name
+    ))
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
-    private var _currentStylusState = MutableStateFlow(StylusState(""))
+    private var _currentStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
     val currentStylusState: StateFlow<StylusState> = _currentStylusState
 
     private val _persistencePopupVisible = MutableStateFlow(false)
@@ -98,10 +100,17 @@ class BubbleViewModel @Inject constructor(
         _currentStylusState.value = stylusState
     }
 
+    private val _alarmClockEnabled = MutableStateFlow(false)
+    val alarmClockEnabled: StateFlow<Boolean> = _alarmClockEnabled
+
     fun changeRecomposePopupTrigger() {
         _recomposePopupTrigger.value = !recomposePopupTrigger.value
     }
 
+    fun setAlarmClockEnabled(value: Boolean) {
+        _alarmClockEnabled.value = value
+    }
+    
     fun setStylusStroke(stroke: Stroke) {
         _stylusStroke.value = Stroke(stroke.width)
     }

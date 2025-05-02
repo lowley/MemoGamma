@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -68,6 +69,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val activePointer by viewModel.activePointer.collectAsState()
     val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
     val recomposeTriggerPopup by viewModel.recomposePopupTrigger.collectAsState()
+    val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState()
+    val currentdrawing by viewModel.currentStylusState.collectAsState()
 
     Surface(
         modifier = Modifier
@@ -127,7 +130,32 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                     }
                 }
 
+                val arrowSize = 30.dp
+
                 if (visibilityState == BubbleState.TOTAL) {
+                    Icon(
+                        modifier = Modifier
+                            .background(Color.Transparent)
+                            .size(35.dp)
+                            .padding(start = 10.dp)
+                            .zIndex(0f)
+                            .then(
+                                if (currentdrawing.name == StylusState.DEFAULT.name)
+                                    Modifier
+                                else
+                                    Modifier.clickable {
+
+                                        viewModel.setAlarmClockEnabled(!alarmClockEnabled)
+                                    }
+                            )
+                            .alpha(if (currentdrawing.name == StylusState.DEFAULT.name) 0.3f else 1f),
+                        painter = if (alarmClockEnabled)
+                            painterResource(R.drawable.dormir_reveil) else painterResource(R.drawable.dormir),
+                        tint = Color.Unspecified,
+                        contentDescription = "Ouvrir / Fermer"
+                    )
+
+
                     Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                         Text(
                             modifier = Modifier
@@ -141,7 +169,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                 }
 
                 if (visibilityState == BubbleState.TOTAL) {
-                    val arrowSize = 30.dp
+
 
                     val a by UndoRedoManager.changeNotifier.collectAsState()
 
@@ -428,11 +456,13 @@ data class StylusState(
                 path = Path().apply { addPath(item.path) }, // nouvelle instance
                 color = Color(item.color.value),
                 style = Stroke(item.style.width),
-                pointList = item.pointList.map { DrawPoint(
-                    it.x,
-                    it.y,
-                    it.type
-                ) }
+                pointList = item.pointList.map {
+                    DrawPoint(
+                        it.x,
+                        it.y,
+                        it.type
+                    )
+                }
             )
         }.toMutableList()
 
