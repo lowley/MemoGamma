@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -65,7 +66,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val pointerName2 by viewModel.pointerName2.collectAsState()
     val action by viewModel.pointerAction.collectAsState()
     val activePointer by viewModel.activePointer.collectAsState()
-    val showPersistencePopup = remember { mutableStateOf(false) }
+    val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
+    val recomposeTriggerPopup by viewModel.recomposePopupTrigger.collectAsState()
 
     Surface(
         modifier = Modifier
@@ -177,7 +179,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                             .padding(end = 10.dp, top = 5.dp)
                             .zIndex(0f)
                             .clickable {
-                                showPersistencePopup.value = true
+                                viewModel.setPersistencePopupVisible(true)
                             }
                             .size(arrowSize),
                         painter = painterResource(R.drawable.disque_dur),
@@ -185,7 +187,9 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         contentDescription = "files"
                     )
                     if (showPersistencePopup.value) {
-                        PersistencePopup(showPersistencePopup, viewModel)
+                        key(recomposeTriggerPopup) {
+                            PersistencePopup(viewModel)
+                        }
                     }
                 }
             }

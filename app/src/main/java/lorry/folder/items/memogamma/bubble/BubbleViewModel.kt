@@ -84,12 +84,22 @@ class BubbleViewModel @Inject constructor(
     private var _currentStylusState = MutableStateFlow(StylusState(""))
     val currentStylusState: StateFlow<StylusState> = _currentStylusState
 
+    private val _persistencePopupVisible = MutableStateFlow(false)
+    val persistencePopupVisible: StateFlow<Boolean> = _persistencePopupVisible
+
     var lastStateBeforeStylusDown: StylusState? = null
 
     val drawings = userPreferences.sheets
 
+    private val _recomposePopupTrigger = MutableStateFlow(false)
+    val recomposePopupTrigger: StateFlow<Boolean> = _recomposePopupTrigger
+    
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
+    }
+
+    fun changeRecomposePopupTrigger() {
+        _recomposePopupTrigger.value = !recomposePopupTrigger.value
     }
 
     fun setStylusStroke(stroke: Stroke) {
@@ -308,8 +318,11 @@ class BubbleViewModel @Inject constructor(
                                 DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE)
                             )
                         val newLastItem = lastItem.copy(pointList = newPointList)
-                        val newState = StylusState(currentStylusState.value.name, newItems.plus(newLastItem).toMutableList())
-                        
+                        val newState = StylusState(
+                            currentStylusState.value.name,
+                            newItems.plus(newLastItem).toMutableList()
+                        )
+
                         if (lastStateBeforeStylusDown != null)
                             UndoRedoManager.add(
                                 DrawingsUndoRedo(lastStateBeforeStylusDown!!, newState, this)
@@ -371,11 +384,29 @@ class BubbleViewModel @Inject constructor(
         _stylusColor.value = color
     }
 
-    fun saveCurrentStateAs(name: String) {
+    fun saveCurrentStateAs(name: String, replace: Boolean = false) {
         viewModelScope.launch {
             val updated = currentStylusState.value.copy(name = name)
-            userPreferences.add_sheet(updated)
+            if (replace)
+                userPreferences.update_sheet(updated)
+            else
+                userPreferences.add_sheet(updated)
         }
+    }
+
+    fun setState(state: StylusState) {
+        TwoFingersScrollState.reset()
+
+        _currentStylusState.value = state
+        _initialStylusState.value = state
+    }
+
+    fun setPersistencePopupVisible(value: Boolean) {
+        _persistencePopupVisible.value = value
+    }
+
+    fun deleteDrawing(state: StylusState) {
+
     }
 
     init {
