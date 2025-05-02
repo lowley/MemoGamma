@@ -119,7 +119,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                                     .size(35.dp)
                                     .zIndex(0f),
                                 painter = if (visibilityState == BubbleState.BUBBLE)
-                                    painterResource(R.drawable.extend) else painterResource(R.drawable.group),
+                                    painterResource(R.drawable.palette) else painterResource(R.drawable.group),
+                                tint = Color.Unspecified,
                                 contentDescription = "Ouvrir / Fermer"
                             )
                         }
