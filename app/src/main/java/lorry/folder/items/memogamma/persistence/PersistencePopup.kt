@@ -1,10 +1,15 @@
 package lorry.folder.items.memogamma.persistence
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,7 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,7 +44,6 @@ import lorry.folder.items.memogamma.bubble.StylusState
 
 @Composable
 fun PersistencePopup(
-    showPopup: MutableState<Boolean>,
     viewModel: BubbleViewModel
 ) {
     Popup(
@@ -50,8 +53,8 @@ fun PersistencePopup(
         Surface(
             shape = RoundedCornerShape(16.dp),
             tonalElevation = 8.dp,
-            color = Color.LightGray,
-            border = BorderStroke(1.dp, Color.DarkGray)
+            color = Color(0xFFfefae0),
+            border = BorderStroke(1.dp, Color(0xFFd4a373))
         ) {
             Column(
                 modifier = Modifier
@@ -62,7 +65,6 @@ fun PersistencePopup(
                 Body(
                     modifier = Modifier,
                     viewModel = viewModel,
-                    showPopup = showPopup
                 )
 
                 Row(
@@ -72,12 +74,14 @@ fun PersistencePopup(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = {
-                        showPopup.value = false
+                        viewModel.setPersistencePopupVisible(false)
+                        viewModel.changeRecomposePopupTrigger()
                     }) {
                         Text("Annuler")
                     }
                     TextButton(onClick = {
-                        showPopup.value = false
+                        viewModel.setPersistencePopupVisible(false)
+                        viewModel.changeRecomposePopupTrigger()
                     }) {
                         Text("Valider")
                     }
@@ -91,10 +95,10 @@ fun PersistencePopup(
 @Composable
 fun Body(
     modifier: Modifier = Modifier,
-    viewModel: BubbleViewModel,
-    showPopup: MutableState<Boolean>
+    viewModel: BubbleViewModel
 ) {
     val arrowSize = 30.dp
+    val eyeSize = 35.dp
     var newName by remember { mutableStateOf("") }
     val initialStylusState by viewModel.initialStylusState.collectAsState()
     val currentStylusState by viewModel.currentStylusState.collectAsState()
@@ -121,7 +125,8 @@ fun Body(
                                 items = mutableListOf(),
                             )
                         )
-                        showPopup.value = false
+                        viewModel.setPersistencePopupVisible(false)
+                        viewModel.changeRecomposePopupTrigger()
                     }
                     .size(arrowSize),
                 painter = painterResource(R.drawable.ampoule),
@@ -142,20 +147,21 @@ fun Body(
                 }
             )
 
-            val isClickable = initialStylusState != currentStylusState
+            val canSaveAsNewFile = initialStylusState != currentStylusState
                     && newName.isNotBlank()
                     && !sheets.any { it.name == newName }
-            
+
             Icon(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
                     .padding(start = 5.dp, end = 10.dp)
                     .zIndex(0f)
                     .size(arrowSize)
-                    .then(if (isClickable) Modifier.clickable {
+                    .then(if (canSaveAsNewFile) Modifier.clickable {
                         viewModel.saveCurrentStateAs(newName)
+                        viewModel.changeRecomposePopupTrigger()
                     } else Modifier)
-                    .alpha(if (isClickable) 1f else 0.3f),
+                    .alpha(if (canSaveAsNewFile) 1f else 0.3f),
                 painter = painterResource(R.drawable.disquette),
                 tint = if (initialStylusState != currentStylusState) Color.Unspecified else Color.Gray,
                 contentDescription = "enregistrer"
@@ -173,10 +179,87 @@ fun Body(
         ) {
             items(sheets.size) { index ->
                 val drawing = sheets.elementAt(index)
-                Text(
-                    text = drawing.name,
+
+                val canUpdate =
+                    initialStylusState != currentStylusState
+                            && initialStylusState.name == drawing.name
+                            && currentStylusState.name == drawing.name
+
+                Row(
                     modifier = Modifier
-                )
+                        .fillMaxWidth()
+                        .padding(horizontal = 15.dp)
+                        .height(50.dp)
+                        .background(
+                            color = Color(0xFFfefae0),
+                            shape = RoundedCornerShape(5.dp)
+                        )
+                        .border(
+                            width = 2.dp,
+                            color = Color(0xFFfaedcd),
+                            shape = RoundedCornerShape(5.dp)
+                        )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(24.dp)
+                            .align(Alignment.CenterVertically)
+                            .clickable {
+                                viewModel.setState(drawing)
+                                viewModel.setPersistencePopupVisible(false)
+                                viewModel.changeRecomposePopupTrigger()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            modifier = Modifier,
+                            text = drawing.name,
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .width(intrinsicSize = IntrinsicSize.Min)
+                            .align(Alignment.CenterVertically)
+                    ) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(start = 5.dp, end = 5.dp)
+                                .zIndex(0f)
+                                .size(eyeSize)
+                                .then(if (canUpdate) modifier.clickable {
+                                    viewModel.saveCurrentStateAs(drawing.name, replace = true)
+                                    //toast
+                                    viewModel.setInitialStylusState(drawing)
+                                    viewModel.setCurrentStylusState(drawing)
+                                    viewModel.setPersistencePopupVisible(false)
+                                    viewModel.changeRecomposePopupTrigger()
+                                } else Modifier)
+                                .alpha(if (canUpdate) 1f else 0.3f),
+                            painter = painterResource(R.drawable.disquette),
+                            tint = Color(0xFFccd5ae),
+                            contentDescription = "enregistrer"
+                        )
+
+
+                        Icon(
+                            modifier = Modifier
+                                .padding(start = 5.dp, end = 5.dp)
+                                .zIndex(0f)
+                                .size(eyeSize)
+                                .clickable {
+                                    viewModel.deleteDrawing(drawing)
+                                    //toast
+                                    viewModel.setPersistencePopupVisible(false)
+                                    viewModel.changeRecomposePopupTrigger()
+                                },
+                            painter = painterResource(R.drawable.poubelle),
+                            tint = Color(0xFFccd5ae),
+                            contentDescription = "supprimer"
+                        )
+                    }
+                }
             }
         }
     }

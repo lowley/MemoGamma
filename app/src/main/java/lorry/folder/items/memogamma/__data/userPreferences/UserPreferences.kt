@@ -70,6 +70,16 @@ open class UserPreferences @javax.inject.Inject constructor(private val context:
         }
     }
 
+    override suspend fun update_sheet(sheet: StylusState) {
+        withContext(Dispatchers.IO) {
+            var existingSheets = sheets.first()
+            val updated = existingSheets
+                .map { if (it.name == sheet.name) sheet else it }
+                .toSet()
+            save_sheets(updated)
+        }
+    }
+
     suspend fun save_sheetsDTO(values: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[SHEETS_KEY] = values
