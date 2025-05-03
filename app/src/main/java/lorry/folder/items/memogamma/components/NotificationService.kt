@@ -44,7 +44,7 @@ class NotificationService : Service() {
             .setSmallIcon(R.drawable.palette) // ton icône
             .addAction(R.drawable.palette, "Afficher bulle", pendingIntent)
             .setOngoing(true)
-            .setPriority(2)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
     }
 

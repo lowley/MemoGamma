@@ -53,7 +53,7 @@ class MainActivity : ComponentActivity() {
             val channel = NotificationChannel(
                 NotificationService.CHANNEL_ID,
                 "Affichage Bulle MemoGamma",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Canal pour déclenchement de la bulle"
             }

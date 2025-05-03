@@ -17,6 +17,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
@@ -414,10 +416,12 @@ class BubbleViewModel @Inject constructor(
     
     fun setAwaking(enabled: Boolean,
                    state: StylusState){
-        
-        
-        
-        
+        val targetPackage = BubbleAccessibilityService.currentPackage
+        if (targetPackage == null)
+            return
+
+        BubbleAccessibilityService.targetPackage = targetPackage
+        BubbleAccessibilityService.targetDrawing = state.name
     }
 
     init {
@@ -438,6 +442,17 @@ class BubbleViewModel @Inject constructor(
                     is BubbleIntent.HideBubbleDialog -> {
                         _bubbleState.value = BubbleState.HIDDEN
                     }
+                    is BubbleIntent.OpenDrawing ->{
+                        val value = drawings.first()
+                        val drawing =   
+                            value.firstOrNull(){drawing -> drawing.name == intent.name 
+                        }
+                        if (drawing != null) {
+                            setState(drawing)
+                            setPersistencePopupVisible(false)
+                            changeRecomposePopupTrigger()
+                        }
+                    }
                 }
             }
         }
@@ -448,6 +463,7 @@ sealed class BubbleIntent {
     object ShowTotalDialog : BubbleIntent()
     object ShowBubbleDialog : BubbleIntent()
     object HideBubbleDialog : BubbleIntent()
+    data class OpenDrawing(val name: String) : BubbleIntent()
 }
 
 fun Path.translate(dx: Float, dy: Float): Path {

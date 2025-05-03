@@ -46,6 +46,7 @@ object BubbleManager {
                                 is BubbleIntent.HideBubbleDialog -> viewModel.setBubbleState(
                                     BubbleState.HIDDEN
                                 )
+                                else -> {}
                             }
                         }
                     }
@@ -74,6 +75,10 @@ object BubbleManager {
 
     fun displayBubble() {
         intentChannel.trySend(BubbleIntent.ShowBubbleDialog)
+    }
+    
+    fun setState(name: String){
+        intentChannel.trySend(BubbleIntent.OpenDrawing(name))
     }
 
     fun toggleBubbleTotal() {
