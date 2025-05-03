@@ -1,4 +1,4 @@
-package lorry.folder.items.memogamma.persistence
+package lorry.folder.items.memogamma.popups
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -75,15 +74,9 @@ fun PersistencePopup(
                 ) {
                     TextButton(onClick = {
                         viewModel.setPersistencePopupVisible(false)
-                        viewModel.changeRecomposePopupTrigger()
+                        viewModel.changeRecomposePersistencePopupTrigger()
                     }) {
-                        Text("Annuler")
-                    }
-                    TextButton(onClick = {
-                        viewModel.setPersistencePopupVisible(false)
-                        viewModel.changeRecomposePopupTrigger()
-                    }) {
-                        Text("Valider")
+                        Text("Fermer")
                     }
                 }
 
@@ -126,7 +119,7 @@ fun Body(
                             )
                         )
                         viewModel.setPersistencePopupVisible(false)
-                        viewModel.changeRecomposePopupTrigger()
+                        viewModel.changeRecomposePersistencePopupTrigger()
                     }
                     .size(arrowSize),
                 painter = painterResource(R.drawable.ampoule),
@@ -159,7 +152,7 @@ fun Body(
                     .size(arrowSize)
                     .then(if (canSaveAsNewFile) Modifier.clickable {
                         viewModel.saveCurrentStateAs(newName)
-                        viewModel.changeRecomposePopupTrigger()
+                        viewModel.changeRecomposePersistencePopupTrigger()
                     } else Modifier)
                     .alpha(if (canSaveAsNewFile) 1f else 0.3f),
                 painter = painterResource(R.drawable.disquette),
@@ -208,7 +201,7 @@ fun Body(
                             .clickable {
                                 viewModel.setState(drawing)
                                 viewModel.setPersistencePopupVisible(false)
-                                viewModel.changeRecomposePopupTrigger()
+                                viewModel.changeRecomposePersistencePopupTrigger()
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -234,7 +227,7 @@ fun Body(
                                     viewModel.setInitialStylusState(drawing)
                                     viewModel.setCurrentStylusState(drawing)
                                     viewModel.setPersistencePopupVisible(false)
-                                    viewModel.changeRecomposePopupTrigger()
+                                    viewModel.changeRecomposePersistencePopupTrigger()
                                 } else Modifier)
                                 .alpha(if (canUpdate) 1f else 0.3f),
                             painter = painterResource(R.drawable.disquette),

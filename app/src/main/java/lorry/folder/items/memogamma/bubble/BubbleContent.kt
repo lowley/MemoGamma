@@ -51,9 +51,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
-import kotlinx.coroutines.flow.combine
 import lorry.folder.items.memogamma.R
-import lorry.folder.items.memogamma.persistence.PersistencePopup
+import lorry.folder.items.memogamma.popups.AlarmClockPopup
+import lorry.folder.items.memogamma.popups.PersistencePopup
 import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
 import lorry.folder.items.memogamma.undoRedo.StylusStrokeUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
@@ -63,18 +63,20 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     //val floatingWindow = LocalFloatingWindow.current
     val visibilityState by viewModel.bubbleState.collectAsState(BubbleState.HIDDEN)
     val stylusColor by viewModel.stylusColor.collectAsState()
-    val pointerCount by viewModel.pointerCount.collectAsState()
-    val pointerName1 by viewModel.pointerName1.collectAsState()
-    val pointerName2 by viewModel.pointerName2.collectAsState()
-    val action by viewModel.pointerAction.collectAsState()
-    val activePointer by viewModel.activePointer.collectAsState()
+//    val pointerCount by viewModel.pointerCount.collectAsState()
+//    val pointerName1 by viewModel.pointerName1.collectAsState()
+//    val pointerName2 by viewModel.pointerName2.collectAsState()
+//    val action by viewModel.pointerAction.collectAsState()
+//    val activePointer by viewModel.activePointer.collectAsState()
     val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
-    val recomposeTriggerPopup by viewModel.recomposePopupTrigger.collectAsState()
+    val showAlarmClockPopup = viewModel.alarmClockPopupPopupVisible.collectAsState(false)
+    val recomposePersistenceTriggerPopup by viewModel.recomposePersistencePopupTrigger.collectAsState()
+    val recomposeAlarmClockTriggerPopup by viewModel.recomposeAlarmClockPopupTrigger.collectAsState()
     val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState(false)
     val currentdrawing by viewModel.currentStylusState.collectAsState()
 
-    
-    
+
+
     Surface(
         modifier = Modifier
             //.align(Alignment.Center)
@@ -142,15 +144,12 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                             .size(35.dp)
                             .padding(start = 10.dp)
                             .zIndex(0f)
-                            .then(
-                                if (currentdrawing.name == StylusState.DEFAULT.name)
-                                    Modifier
-                                else
-                                    Modifier.clickable {
-                                        viewModel.setAwaking(enabled =!alarmClockEnabled,
-                                            state = currentdrawing)
-                                    }
-                            )
+                            .clickable {
+                                if (alarmClockEnabled) {
+                                    viewModel.setAlarmClockPopupVisible(true)
+                                } else
+                                    viewModel.setAwaking(state = currentdrawing)
+                            }
                             .alpha(if (alarmClockEnabled) 1f else 0.3f),
                         painter = if (alarmClockEnabled)
                             painterResource(R.drawable.sourire) else painterResource(R.drawable.dormir),
@@ -217,8 +216,14 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         contentDescription = "files"
                     )
                     if (showPersistencePopup.value) {
-                        key(recomposeTriggerPopup) {
+                        key(recomposePersistenceTriggerPopup) {
                             PersistencePopup(viewModel)
+                        }
+                    }
+
+                    if (showAlarmClockPopup.value) {
+                        key(recomposeAlarmClockTriggerPopup) {
+                            AlarmClockPopup(viewModel)
                         }
                     }
                 }
@@ -474,7 +479,7 @@ data class StylusState(
         val DEFAULT = StylusState("Défaut", mutableListOf())
     }
 
-    fun isDefault() = this.items == DEFAULT.items
+//    fun isDefault() = this.items == DEFAULT.items
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

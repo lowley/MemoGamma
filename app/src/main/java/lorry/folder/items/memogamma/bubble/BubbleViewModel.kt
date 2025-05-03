@@ -93,12 +93,18 @@ class BubbleViewModel @Inject constructor(
     private val _persistencePopupVisible = MutableStateFlow(false)
     val persistencePopupVisible: StateFlow<Boolean> = _persistencePopupVisible
 
+    private val _alarmClockPopupPopupVisible = MutableStateFlow(false)
+    val alarmClockPopupPopupVisible: StateFlow<Boolean> = _alarmClockPopupPopupVisible
+    
     var lastStateBeforeStylusDown: StylusState? = null
 
     val drawings = userPreferences.sheets
 
-    private val _recomposePopupTrigger = MutableStateFlow(false)
-    val recomposePopupTrigger: StateFlow<Boolean> = _recomposePopupTrigger
+    private val _recomposePersistencePopupTrigger = MutableStateFlow(false)
+    val recomposePersistencePopupTrigger: StateFlow<Boolean> = _recomposePersistencePopupTrigger
+
+    private val _recomposeAlarmClockPopupTrigger = MutableStateFlow(false)
+    val recomposeAlarmClockPopupTrigger: StateFlow<Boolean> = _recomposeAlarmClockPopupTrigger
 
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
@@ -109,8 +115,12 @@ class BubbleViewModel @Inject constructor(
     }
     
 
-    fun changeRecomposePopupTrigger() {
-        _recomposePopupTrigger.value = !recomposePopupTrigger.value
+    fun changeRecomposePersistencePopupTrigger() {
+        _recomposePersistencePopupTrigger.value = !recomposePersistencePopupTrigger.value
+    }
+
+    fun changeRecomposeAlarmClockPopupTrigger() {
+        _recomposeAlarmClockPopupTrigger.value = !recomposeAlarmClockPopupTrigger.value
     }
 
     fun setStylusStroke(stroke: Stroke) {
@@ -407,6 +417,10 @@ class BubbleViewModel @Inject constructor(
     fun setPersistencePopupVisible(value: Boolean) {
         _persistencePopupVisible.value = value
     }
+    
+    fun setAlarmClockPopupVisible(value: Boolean) {
+        _alarmClockPopupPopupVisible.value = value
+    }
 
     fun deleteDrawing(state: StylusState) {
         viewModelScope.launch {
@@ -414,7 +428,7 @@ class BubbleViewModel @Inject constructor(
         }
     }
 
-    fun setAwaking(enabled: Boolean, state: StylusState) {
+    fun setAwaking(state: StylusState) {
         val targetPackage = GammaAccessibilityService.currentPackage
         if (targetPackage == null)
             return
@@ -456,12 +470,12 @@ class BubbleViewModel @Inject constructor(
                         if (drawing != null) {
                             setState(drawing)
                             setPersistencePopupVisible(false)
-                            changeRecomposePopupTrigger()
+                            changeRecomposePersistencePopupTrigger()
                         }
                         if (intent.name == StylusState.DEFAULT.name) {
                             setState(StylusState.DEFAULT)
                             setPersistencePopupVisible(false)
-                            changeRecomposePopupTrigger()
+                            changeRecomposePersistencePopupTrigger()
                         }
                     }
                 }
