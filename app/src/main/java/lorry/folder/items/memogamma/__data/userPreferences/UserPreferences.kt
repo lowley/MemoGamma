@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.toColorInt
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.Dispatchers
@@ -29,11 +30,19 @@ open class UserPreferences @javax.inject.Inject constructor(private val context:
     IUserPreferences {
 
     private val dataStore = context.applicationContext.dataStore
-
+    
     companion object {
         private val SHEETS_KEY = stringSetPreferencesKey("sheets")
+        private val DRAWING_TO_LOAD_KEY = stringPreferencesKey("drawing_to_load")
+        private val REACTIVE_PACKAGE_KEY = stringPreferencesKey("reactive_package")
     }
 
+    override val drawingToLoad: Flow<String> = dataStore.data
+        .map { preferences -> preferences[DRAWING_TO_LOAD_KEY] ?: "" }
+    
+    override val reactivePackage: Flow<String> = dataStore.data
+        .map { preferences -> preferences[REACTIVE_PACKAGE_KEY] ?: "" }
+    
     //dto
     override val sheetsDTO: Flow<Set<String>> = dataStore.data
         .map { preferences ->
@@ -91,6 +100,35 @@ open class UserPreferences @javax.inject.Inject constructor(private val context:
     suspend fun save_sheetsDTO(values: Set<String>) {
         context.dataStore.edit { preferences ->
             preferences[SHEETS_KEY] = values
+        }
+    }
+
+    //*********  DRAWINGS ***************
+    override suspend fun getDrawingToLoad(): String {
+        return withContext(Dispatchers.IO) {
+            drawingToLoad.first()
+        }
+    }
+
+    override suspend fun setDrawingToLoad(value: String) {
+        withContext(Dispatchers.IO) {
+            context.dataStore.edit { preferences ->
+                preferences[DRAWING_TO_LOAD_KEY] = value
+            }
+        }
+    }
+
+    override suspend fun getReactivePackage(): String {
+        return withContext(Dispatchers.IO) {
+            reactivePackage.first()
+        }
+    }
+
+    override suspend fun setReactivePackage(value: String) {
+        withContext(Dispatchers.IO) {
+            context.dataStore.edit { preferences ->
+                preferences[REACTIVE_PACKAGE_KEY] = value
+            }
         }
     }
 }

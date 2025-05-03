@@ -13,4 +13,15 @@ interface IUserPreferences {
     suspend fun add_sheet(sheet: StylusState)
     suspend fun update_sheet(sheet: StylusState)
     suspend fun remove_sheet(sheet: StylusState)
+    
+    val drawingToLoad: Flow<String>
+    val reactivePackage: Flow<String>
+    
+    suspend fun getDrawingToLoad(): String
+    suspend fun setDrawingToLoad(value: String)
+    suspend fun getReactivePackage(): String
+    suspend fun setReactivePackage(value: String)
+
+    
+    
 }
