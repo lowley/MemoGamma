@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -103,15 +104,13 @@ class BubbleViewModel @Inject constructor(
         _currentStylusState.value = stylusState
     }
 
-    private val _alarmClockEnabled = MutableStateFlow(false)
-    val alarmClockEnabled: StateFlow<Boolean> = _alarmClockEnabled
+    val alarmClockEnabled = combine(userPreferences.drawingToLoad, userPreferences.reactivePackage){ drawingToLoad, reactivePackage ->
+        drawingToLoad.isNotEmpty() && reactivePackage.isNotEmpty()
+    }
+    
 
     fun changeRecomposePopupTrigger() {
         _recomposePopupTrigger.value = !recomposePopupTrigger.value
-    }
-
-    fun setAlarmClockEnabled(value: Boolean) {
-        _alarmClockEnabled.value = value
     }
 
     fun setStylusStroke(stroke: Stroke) {

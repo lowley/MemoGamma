@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.github.only52607.compose.window.dragFloatingWindow
+import kotlinx.coroutines.flow.combine
 import lorry.folder.items.memogamma.R
 import lorry.folder.items.memogamma.persistence.PersistencePopup
 import lorry.folder.items.memogamma.undoRedo.StylusColorUndoRedo
@@ -69,9 +70,11 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val activePointer by viewModel.activePointer.collectAsState()
     val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
     val recomposeTriggerPopup by viewModel.recomposePopupTrigger.collectAsState()
-    val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState()
+    val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState(false)
     val currentdrawing by viewModel.currentStylusState.collectAsState()
 
+    
+    
     Surface(
         modifier = Modifier
             //.align(Alignment.Center)
@@ -146,12 +149,11 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                                     Modifier.clickable {
                                         viewModel.setAwaking(enabled =!alarmClockEnabled,
                                             state = currentdrawing)
-                                        viewModel.setAlarmClockEnabled(!alarmClockEnabled)
                                     }
                             )
-                            .alpha(if (currentdrawing.name == StylusState.DEFAULT.name) 0.3f else 1f),
+                            .alpha(if (alarmClockEnabled) 1f else 0.3f),
                         painter = if (alarmClockEnabled)
-                            painterResource(R.drawable.dormir_reveil) else painterResource(R.drawable.dormir),
+                            painterResource(R.drawable.sourire) else painterResource(R.drawable.dormir),
                         tint = Color.Unspecified,
                         contentDescription = "Ouvrir / Fermer"
                     )
