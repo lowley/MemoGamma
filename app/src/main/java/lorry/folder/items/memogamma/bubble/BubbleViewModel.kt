@@ -411,6 +411,14 @@ class BubbleViewModel @Inject constructor(
             userPreferences.remove_sheet(state)
         }
     }
+    
+    fun setAwaking(enabled: Boolean,
+                   state: StylusState){
+        
+        
+        
+        
+    }
 
     init {
         println("THOO: init() exécutée...")

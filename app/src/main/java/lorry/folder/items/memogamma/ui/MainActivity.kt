@@ -1,8 +1,11 @@
 package lorry.folder.items.memogamma.ui
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -12,16 +15,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import lorry.folder.items.memogamma.bubble.BubbleManager
+import lorry.folder.items.memogamma.components.NotificationService
 import lorry.folder.items.memogamma.ui.theme.MemoGammaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        createNotificationChannel(context = this)
+        
+        val intent = Intent(this, NotificationService::class.java)
+        this.startForegroundService(intent)
+        
         enableEdgeToEdge()
         setContent {
             MemoGammaTheme {
                 askOverlayPermission(this)
-                BubbleManager.showBubble(this)
+                //BubbleManager.showBubble(this)
                 finish()
             }
         }
@@ -39,6 +48,20 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                NotificationService.CHANNEL_ID,
+                "Affichage Bulle MemoGamma",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Canal pour déclenchement de la bulle"
+            }
+
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(channel)
+        }
+    }
 
 }
 

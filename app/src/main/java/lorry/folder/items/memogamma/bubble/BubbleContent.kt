@@ -144,7 +144,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                                     Modifier
                                 else
                                     Modifier.clickable {
-
+                                        viewModel.setAwaking(enabled =!alarmClockEnabled,
+                                            state = currentdrawing)
                                         viewModel.setAlarmClockEnabled(!alarmClockEnabled)
                                     }
                             )
@@ -169,8 +170,6 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                 }
 
                 if (visibilityState == BubbleState.TOTAL) {
-
-
                     val a by UndoRedoManager.changeNotifier.collectAsState()
 
                     Icon(

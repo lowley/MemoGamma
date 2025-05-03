@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     
     <application
             android:allowBackup="true"
@@ -24,6 +26,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+                android:name=".bubble.BubbleAccessibilityService"
+                android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+
+            <meta-data
+                    android:name="android.accessibilityservice"
+                    android:resource="@xml/accessibility_config" />
+        </service>
+        <service
+                android:name=".components.NotificationService"
+                android:exported="false"
+                android:foregroundServiceType="shortService" />
     </application>
 
 </manifest>
