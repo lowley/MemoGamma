@@ -1,5 +1,6 @@
 package lorry.folder.items.memogamma.ui
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -8,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -30,7 +32,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             MemoGammaTheme {
                 askOverlayPermission(this)
-                //BubbleManager.showBubble(this)
+                if(isAccessibilityServiceEnabled(this))
+                    BubbleManager.showBubble(this)
                 finish()
             }
         }
@@ -63,6 +66,12 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    fun isAccessibilityServiceEnabled(context: Context): Boolean {
+        val am = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
+        val enabledServices =
+            am.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+        return enabledServices.any { it.resolveInfo.serviceInfo.name.endsWith("GammaAccessibilityService") }
+    }
 }
 
 @Composable

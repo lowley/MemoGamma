@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
@@ -80,9 +79,11 @@ class BubbleViewModel @Inject constructor(
 
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private var _initialStylusState = MutableStateFlow(StylusState(
-        StylusState.DEFAULT.name
-    ))
+    private var _initialStylusState = MutableStateFlow(
+        StylusState(
+            StylusState.DEFAULT.name
+        )
+    )
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
     private var _currentStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
@@ -112,7 +113,7 @@ class BubbleViewModel @Inject constructor(
     fun setAlarmClockEnabled(value: Boolean) {
         _alarmClockEnabled.value = value
     }
-    
+
     fun setStylusStroke(stroke: Stroke) {
         _stylusStroke.value = Stroke(stroke.width)
     }
@@ -413,15 +414,19 @@ class BubbleViewModel @Inject constructor(
             userPreferences.remove_sheet(state)
         }
     }
-    
-    fun setAwaking(enabled: Boolean,
-                   state: StylusState){
-        val targetPackage = BubbleAccessibilityService.currentPackage
+
+    fun setAwaking(enabled: Boolean, state: StylusState) {
+        val targetPackage = GammaAccessibilityService.currentPackage
         if (targetPackage == null)
             return
 
-        BubbleAccessibilityService.targetPackage = targetPackage
-        BubbleAccessibilityService.targetDrawing = state.name
+        viewModelScope.launch(Dispatchers.IO) {
+            userPreferences.setReactivePackage(targetPackage)
+            userPreferences.setDrawingToLoad(state.name)
+        }
+
+        GammaAccessibilityService.targetPackage = targetPackage
+        GammaAccessibilityService.targetDrawing = state.name
     }
 
     init {
@@ -429,7 +434,7 @@ class BubbleViewModel @Inject constructor(
         create()
 
         viewModelScope.launch {
-            intentChannel.consumeAsFlow().collect { intent ->
+            intentChannel.consumeAsFlow<BubbleIntent>().collect { intent: BubbleIntent ->
                 when (intent) {
                     is BubbleIntent.ShowTotalDialog -> {
                         _bubbleState.value = BubbleState.TOTAL
@@ -442,13 +447,20 @@ class BubbleViewModel @Inject constructor(
                     is BubbleIntent.HideBubbleDialog -> {
                         _bubbleState.value = BubbleState.HIDDEN
                     }
-                    is BubbleIntent.OpenDrawing ->{
+
+                    is BubbleIntent.OpenDrawing -> {
                         val value = drawings.first()
-                        val drawing =   
-                            value.firstOrNull(){drawing -> drawing.name == intent.name 
-                        }
+                        val drawing =
+                            value.firstOrNull() { drawing ->
+                                drawing.name == intent.name
+                            }
                         if (drawing != null) {
                             setState(drawing)
+                            setPersistencePopupVisible(false)
+                            changeRecomposePopupTrigger()
+                        }
+                        if (intent.name == StylusState.DEFAULT.name) {
+                            setState(StylusState.DEFAULT)
                             setPersistencePopupVisible(false)
                             changeRecomposePopupTrigger()
                         }

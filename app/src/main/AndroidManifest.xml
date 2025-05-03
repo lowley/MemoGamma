@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
         <service
-                android:name=".bubble.BubbleAccessibilityService"
+                android:name=".bubble.GammaAccessibilityService"
                 android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
                 android:exported="true">
             <intent-filter>

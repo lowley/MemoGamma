@@ -2,13 +2,17 @@ package lorry.folder.items.memogamma.bubble
 
 import android.content.Context
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import com.github.only52607.compose.window.ComposeFloatingWindow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.first
 import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 
 object BubbleManager {
     private var floatingWindow: ComposeFloatingWindow? = null
@@ -31,7 +35,8 @@ object BubbleManager {
                     )[BubbleViewModel::class.java]
 
                     var stylusState = viewModel.currentStylusState
-
+                    var drawings = userPreferences.sheets
+                    
                     LaunchedEffect(Unit) {
                         intentChannel.consumeAsFlow().collect { intent ->
                             when (intent) {
@@ -46,6 +51,25 @@ object BubbleManager {
                                 is BubbleIntent.HideBubbleDialog -> viewModel.setBubbleState(
                                     BubbleState.HIDDEN
                                 )
+
+                                is BubbleIntent.OpenDrawing -> {
+                                    val value = drawings.first()
+                                    val drawing =
+                                        value.firstOrNull() { drawing ->
+                                            drawing.name == intent.name
+                                        }
+                                    if (drawing != null) {
+                                        viewModel.setState(drawing)
+                                        viewModel.setPersistencePopupVisible(false)
+                                        viewModel.changeRecomposePopupTrigger()
+                                    }
+                                    if (intent.name == StylusState.DEFAULT.name) {
+                                        viewModel.setState(StylusState.DEFAULT)
+                                        viewModel.setPersistencePopupVisible(false)
+                                        viewModel.changeRecomposePopupTrigger()
+                                    }
+                                }
+                                
                                 else -> {}
                             }
                         }
@@ -79,6 +103,10 @@ object BubbleManager {
     
     fun setState(name: String){
         intentChannel.trySend(BubbleIntent.OpenDrawing(name))
+    }
+    
+    fun resetState(){
+        intentChannel.trySend(BubbleIntent.OpenDrawing(StylusState.DEFAULT.name))
     }
 
     fun toggleBubbleTotal() {
