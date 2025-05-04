@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -20,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -84,7 +86,7 @@ fun AlarmClockBody(
     val eyeSize = 35.dp
 
     val entetes = listOf("Application", "Feuille")
-    
+
     Column(
         modifier = Modifier,
     ) {
@@ -123,71 +125,105 @@ fun AlarmClockBody(
 
                     },
                 painter = painterResource(R.drawable.poubelle),
-                tint = Color.Transparent,
+                tint = Color.Transparent,    // <------------
                 contentDescription = "supprimer"
             )
         }
 
-        val targetApplication = viewModel.userPreferences.reactivePackage.collectAsState("")
-        val targetSheet = viewModel.userPreferences.drawingToLoad.collectAsState("")
-        val datas = listOf(targetApplication, targetSheet)
+        val datas by viewModel.alarmClocks.collectAsState(emptySet())
 
-        Row(
+        LazyColumn(
             modifier = Modifier
-//                .padding(0.dp)
+                .padding(horizontal = 5.dp)
         ) {
-            datas.forEach { cellule ->
-                Box(
+            items(datas.size) { index ->
+                var item = datas.elementAt(index)
+
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 8.dp, horizontal = 5.dp)
-                        .height(24.dp)
+//                .padding(0.dp)
                 ) {
-                    Text(
-                        text = cellule.value,
+                    Box(
                         modifier = Modifier
-                            .align(Alignment.Center),
-                        fontWeight = FontWeight.Normal
-                    )
+                            .weight(1f)
+                            .padding(vertical = 8.dp, horizontal = 5.dp)
+                            .height(24.dp)
+                    ) {
+                        Text(
+                            text = item.friendlyPackage ?: item.realPackage,
+                            modifier = Modifier
+                                .align(Alignment.Center),
+                            fontWeight = FontWeight.Normal
+                        )
 
-                    Icon(
+                        Icon(
+                            modifier = Modifier
+                                .zIndex(0f)
+                                .align(Alignment.CenterEnd)
+                                .size(eyeSize)
+                                .clickable {
+
+                                },
+                            painter = painterResource(R.drawable.stylo_plume_seul),
+                            tint = Color(0xFFccd5ae),
+                            contentDescription = "editer"
+                        )
+                    }
+
+                    Box(
                         modifier = Modifier
-                            .zIndex(0f)
-                            .align(Alignment.CenterEnd)
-                            .size(eyeSize)
-                            .clickable {
+                            .weight(1f)
+                            .padding(vertical = 8.dp, horizontal = 5.dp)
+                            .height(24.dp)
+                    ) {
+                        Text(
+                            text = item.sheet,
+                            modifier = Modifier
+                                .align(Alignment.Center),
+                            fontWeight = FontWeight.Normal
+                        )
 
-                            },
-                        painter = painterResource(R.drawable.stylo_plume_seul),
-                        tint = Color(0xFFccd5ae),
-                        contentDescription = "editer"
-                    )
+                        Icon(
+                            modifier = Modifier
+                                .zIndex(0f)
+                                .align(Alignment.CenterEnd)
+                                .size(eyeSize)
+                                .clickable {
+
+                                },
+                            painter = painterResource(R.drawable.stylo_plume_seul),
+                            tint = Color(0xFFccd5ae),
+                            contentDescription = "editer"
+                        )
+                    }
+
+
+                    Box(
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .height(24.dp)
+                    ) {
+                        Icon(
+                            modifier = Modifier
+                                .padding(start = 5.dp, end = 5.dp)
+                                .align(Alignment.Center)
+                                .zIndex(0f)
+                                .size(20.dp)
+                                .padding(bottom = 2.dp)
+                                .clickable {
+                                    viewModel.deleteAlarmClock(item)
+                                },
+                            painter = painterResource(R.drawable.poubelle),
+                            tint = Color(0xFFccd5ae),
+                            contentDescription = "supprimer"
+                        )
+                    }
                 }
             }
-
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .height(24.dp)
-            ) {
-                Icon(
-                    modifier = Modifier
-                        .padding(start = 5.dp, end = 5.dp)
-                        .align(Alignment.Center)
-                        .zIndex(0f)
-                        .size(20.dp)
-                        .padding(bottom = 2.dp)
-                        .clickable {
-
-                        },
-                    painter = painterResource(R.drawable.poubelle),
-                    tint = Color(0xFFccd5ae),
-                    contentDescription = "supprimer"
-                )
-            }
         }
+    }
 
-        // Lignes de données
+    // Lignes de données
 //        lignes.forEach { ligne ->
 //            Row {
 //                ligne.forEach { cellule ->
@@ -200,6 +236,5 @@ fun AlarmClockBody(
 //                }
 //            }
 //        }
-    }
-    
 }
+

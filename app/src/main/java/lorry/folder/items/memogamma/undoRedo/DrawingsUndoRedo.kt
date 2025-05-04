@@ -1,7 +1,7 @@
 package lorry.folder.items.memogamma.undoRedo
 
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import lorry.folder.items.memogamma.bubble.StylusState
+import lorry.folder.items.memogamma.components.dataClasses.StylusState
 
 class DrawingsUndoRedo(
     override val oldState: StylusState,

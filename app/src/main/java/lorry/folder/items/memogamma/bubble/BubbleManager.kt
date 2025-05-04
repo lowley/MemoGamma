@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
 import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
+import lorry.folder.items.memogamma.components.dataClasses.BubbleIntent
+import lorry.folder.items.memogamma.components.dataClasses.StylusState
 
 object BubbleManager {
     private var floatingWindow: ComposeFloatingWindow? = null

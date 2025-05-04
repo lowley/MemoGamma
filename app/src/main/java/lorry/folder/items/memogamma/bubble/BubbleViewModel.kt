@@ -15,14 +15,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
 import lorry.folder.items.memogamma.bubble.BubbleManager.intentChannel
+import lorry.folder.items.memogamma.components.dataClasses.AlarmClock
+import lorry.folder.items.memogamma.components.dataClasses.BubbleIntent
+import lorry.folder.items.memogamma.components.dataClasses.DrawPoint
+import lorry.folder.items.memogamma.components.dataClasses.DrawPointType
+import lorry.folder.items.memogamma.components.dataClasses.StylusState
+import lorry.folder.items.memogamma.components.dataClasses.StylusStatePath
+import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 import java.util.UUID
@@ -80,11 +89,7 @@ class BubbleViewModel @Inject constructor(
 
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private var _initialStylusState = MutableStateFlow(
-        StylusState(
-            StylusState.DEFAULT.name
-        )
-    )
+    private var _initialStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
     private var _currentStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
@@ -93,13 +98,13 @@ class BubbleViewModel @Inject constructor(
     private val _persistencePopupVisible = MutableStateFlow(false)
     val persistencePopupVisible: StateFlow<Boolean> = _persistencePopupVisible
 
-    private val _alarmClockPopupPopupVisible = MutableStateFlow(false)
-    val alarmClockPopupPopupVisible: StateFlow<Boolean> = _alarmClockPopupPopupVisible
+    private val _alarmClockPopupVisible = MutableStateFlow(false)
+    val alarmClockPopupVisible: StateFlow<Boolean> = _alarmClockPopupVisible
     
     var lastStateBeforeStylusDown: StylusState? = null
 
     val drawings = userPreferences.sheets
-
+    
     private val _recomposePersistencePopupTrigger = MutableStateFlow(false)
     val recomposePersistencePopupTrigger: StateFlow<Boolean> = _recomposePersistencePopupTrigger
 
@@ -109,12 +114,19 @@ class BubbleViewModel @Inject constructor(
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
     }
-
-    val alarmClockEnabled = combine(userPreferences.drawingToLoad, userPreferences.reactivePackage){ drawingToLoad, reactivePackage ->
-        drawingToLoad.isNotEmpty() && reactivePackage.isNotEmpty()
-    }
     
-
+    val alarmClocks = userPreferences.alarmClocks
+    val alarmClockEnabled = alarmClocks.map { alarmClocks -> alarmClocks.isNotEmpty() }
+    val currentAlarmClocksFlow: StateFlow<Set<AlarmClock>>
+        get()= alarmClocks.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = setOf()
+        )
+    val currentAlarmClocks: Set<AlarmClock>
+        get()= currentAlarmClocksFlow.value
+    
+    
     fun changeRecomposePersistencePopupTrigger() {
         _recomposePersistencePopupTrigger.value = !recomposePersistencePopupTrigger.value
     }
@@ -397,13 +409,12 @@ class BubbleViewModel @Inject constructor(
         _stylusColor.value = color
     }
 
-    fun saveCurrentStateAs(name: String, replace: Boolean = false) {
+    fun saveCurrentStateAs(state: StylusState, name: String, replace: Boolean = false) {
         viewModelScope.launch {
-            val updated = currentStylusState.value.copy(name = name)
             if (replace)
-                userPreferences.update_sheet(updated)
+                userPreferences.update_sheet(state)
             else
-                userPreferences.add_sheet(updated)
+                userPreferences.add_sheet(state.copy(name = name))
         }
     }
 
@@ -419,7 +430,7 @@ class BubbleViewModel @Inject constructor(
     }
     
     fun setAlarmClockPopupVisible(value: Boolean) {
-        _alarmClockPopupPopupVisible.value = value
+        _alarmClockPopupVisible.value = value
     }
 
     fun deleteDrawing(state: StylusState) {
@@ -434,12 +445,22 @@ class BubbleViewModel @Inject constructor(
             return
 
         viewModelScope.launch(Dispatchers.IO) {
-            userPreferences.setReactivePackage(targetPackage)
-            userPreferences.setDrawingToLoad(state.name)
+            userPreferences.addAlarmClock(
+                AlarmClock(targetPackage, targetPackage,state.name)
+            )
         }
+    }
 
-        GammaAccessibilityService.targetPackage = targetPackage
-        GammaAccessibilityService.targetDrawing = state.name
+    fun deleteAlarmClock(clock: AlarmClock) {
+        viewModelScope.launch(Dispatchers.IO) {
+            userPreferences.removeAlarmClock(clock)
+        }
+    }
+
+    fun replaceName(state: StylusState, newName: String) {
+        viewModelScope.launch { 
+            userPreferences.replaceName(state, newName)
+        }
     }
 
     init {
@@ -484,16 +505,4 @@ class BubbleViewModel @Inject constructor(
     }
 }
 
-sealed class BubbleIntent {
-    object ShowTotalDialog : BubbleIntent()
-    object ShowBubbleDialog : BubbleIntent()
-    object HideBubbleDialog : BubbleIntent()
-    data class OpenDrawing(val name: String) : BubbleIntent()
-}
 
-fun Path.translate(dx: Float, dy: Float): Path {
-    val matrix = Matrix()
-    matrix.translate(dx, dy)
-    this.transform(matrix)
-    return this
-}

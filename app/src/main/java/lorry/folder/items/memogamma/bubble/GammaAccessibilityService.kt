@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
+import lorry.folder.items.memogamma.components.dataClasses.AlarmClock
 
 class GammaAccessibilityService : AccessibilityService() {
 
@@ -16,8 +17,7 @@ class GammaAccessibilityService : AccessibilityService() {
 
     companion object {
         var currentPackage: String? = null
-        var targetPackage = "idm.internet.download.manager.plus"
-        var targetDrawing: String? = null
+        var alarmClocks: Set<AlarmClock> = setOf()
     }
 
     override fun onServiceConnected() {
@@ -27,14 +27,8 @@ class GammaAccessibilityService : AccessibilityService() {
             val userPreferences = UserPreferences(this@GammaAccessibilityService)
 
             launch {
-                userPreferences.reactivePackage.collect {
-                    targetPackage = it
-                }
-            }
-
-            launch {
-                userPreferences.drawingToLoad.collect {
-                    targetDrawing = it
+                userPreferences.alarmClocks.collect {
+                    alarmClocks = it
                 }
             }
         }
@@ -44,22 +38,29 @@ class GammaAccessibilityService : AccessibilityService() {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
 
         val newPackage = event.packageName?.toString() ?: return
+        currentPackage = newPackage
         if (newPackage == previousPackage) return // Évite les doublons
 
         previousPackage = newPackage
-        currentPackage = newPackage
 
-        if (newPackage == targetPackage) {
-            // Entrée dans le package cible
+        if (newPackage == "com.samsung.android.service.aircommand"
+            || newPackage == "lorry.folder.items.memogamma"
+        )
+            return
+
+        val matchingAlarmClock = alarmClocks.firstOrNull { alarmClock ->
+            alarmClock.realPackage == newPackage
+        }
+
+        if (matchingAlarmClock != null) {
+            // Entrée dans un package cible
             if (!isInTargetPackage) {
                 isInTargetPackage = true
 
                 try {
                     //BubbleManager.displayBubble()
-                    println("onAccessibilityEvent: ${BubbleManager}, $targetDrawing")
-                    targetDrawing?.let {
-                        BubbleManager.setState(it)
-                    }
+                    println("onAccessibilityEvent: ${BubbleManager}, ${matchingAlarmClock.sheet}")
+                    BubbleManager.setState(matchingAlarmClock.sheet)
                 } catch (ex: Exception) {
                     println("onAccessibilityEvent: BubbleManager pas prêt")
                 }

@@ -1,5 +1,6 @@
 package lorry.folder.items.memogamma.popups
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
@@ -39,7 +41,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.zIndex
 import lorry.folder.items.memogamma.R
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import lorry.folder.items.memogamma.bubble.StylusState
+import lorry.folder.items.memogamma.components.dataClasses.StylusState
 
 @Composable
 fun PersistencePopup(
@@ -101,7 +103,8 @@ fun Body(
         modifier = Modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-
+        val context = LocalContext.current
+        
         Row(
             modifier = Modifier
         ) {
@@ -144,6 +147,8 @@ fun Body(
                     && newName.isNotBlank()
                     && !sheets.any { it.name == newName }
 
+            val canSaveAsExistingFile = initialStylusState != currentStylusState
+
             Icon(
                 modifier = Modifier
                     .align(Alignment.CenterVertically)
@@ -151,8 +156,13 @@ fun Body(
                     .zIndex(0f)
                     .size(arrowSize)
                     .then(if (canSaveAsNewFile) Modifier.clickable {
-                        viewModel.saveCurrentStateAs(newName)
+                        viewModel.saveCurrentStateAs(currentStylusState, newName)
                         viewModel.changeRecomposePersistencePopupTrigger()
+                        Toast.makeText(
+                            context,
+                            "Dessin ${newName} créé",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     } else Modifier)
                     .alpha(if (canSaveAsNewFile) 1f else 0.3f),
                 painter = painterResource(R.drawable.disquette),
@@ -222,12 +232,19 @@ fun Body(
                                 .zIndex(0f)
                                 .size(eyeSize)
                                 .then(if (canUpdate) modifier.clickable {
-                                    viewModel.saveCurrentStateAs(drawing.name, replace = true)
+                                    val updated = if (newName.isNotEmpty()) currentStylusState.copy(name = newName)
+                                    else currentStylusState
+                                    viewModel.saveCurrentStateAs(updated, newName, replace = true)
                                     //toast
-                                    viewModel.setInitialStylusState(drawing)
-                                    viewModel.setCurrentStylusState(drawing)
+                                    viewModel.setInitialStylusState(updated)
+                                    viewModel.setCurrentStylusState(updated)
                                     viewModel.setPersistencePopupVisible(false)
                                     viewModel.changeRecomposePersistencePopupTrigger()
+                                    Toast.makeText(
+                                        context,
+                                        "Dessin $newName enregistré",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 } else Modifier)
                                 .alpha(if (canUpdate) 1f else 0.3f),
                             painter = painterResource(R.drawable.disquette),
@@ -242,8 +259,13 @@ fun Body(
                                 .zIndex(0f)
                                 .size(eyeSize)
                                 .clickable {
+                                    val name = drawing.name
                                     viewModel.deleteDrawing(drawing)
-                                    //toast
+                                    Toast.makeText(
+                                        context,
+                                        "Dessin ${name} supprimé",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                     //viewModel.changeRecomposePopupTrigger()
                                 },
                             painter = painterResource(R.drawable.poubelle),
