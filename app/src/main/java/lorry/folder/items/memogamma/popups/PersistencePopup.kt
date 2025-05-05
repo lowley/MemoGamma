@@ -95,8 +95,8 @@ fun Body(
     val arrowSize = 30.dp
     val eyeSize = 35.dp
     var newName by remember { mutableStateOf("") }
-    val initialStylusState by viewModel.initialStylusState.collectAsState()
-    val currentStylusState by viewModel.currentStylusState.collectAsState()
+    val initialStylusState by viewModel.screenInteraction.initialStylusState.collectAsState()
+    val currentStylusState by viewModel.screenInteraction.currentStylusState.collectAsState()
     val sheets by viewModel.drawings.collectAsState(emptySet())
 
     Column(
@@ -114,8 +114,8 @@ fun Body(
                     .padding(start = 10.dp, end = 5.dp)
                     .zIndex(0f)
                     .clickable {
-                        viewModel.setInitialStylusState(StylusState.DEFAULT)
-                        viewModel.setCurrentStylusState(
+                        viewModel.screenInteraction.setInitialStylusState(StylusState.DEFAULT)
+                        viewModel.screenInteraction.setCurrentStylusState(
                             StylusState(
                                 name = "",
                                 items = mutableListOf(),
@@ -209,7 +209,7 @@ fun Body(
                             .height(24.dp)
                             .align(Alignment.CenterVertically)
                             .clickable {
-                                viewModel.setState(drawing)
+                                viewModel.screenInteraction.setState(drawing)
                                 viewModel.setPersistencePopupVisible(false)
                                 viewModel.changeRecomposePersistencePopupTrigger()
                             },
@@ -236,8 +236,8 @@ fun Body(
                                     else currentStylusState
                                     viewModel.saveCurrentStateAs(updated, newName, replace = true)
                                     //toast
-                                    viewModel.setInitialStylusState(updated)
-                                    viewModel.setCurrentStylusState(updated)
+                                    viewModel.screenInteraction.setInitialStylusState(updated)
+                                    viewModel.screenInteraction.setCurrentStylusState(updated)
                                     viewModel.setPersistencePopupVisible(false)
                                     viewModel.changeRecomposePersistencePopupTrigger()
                                     Toast.makeText(

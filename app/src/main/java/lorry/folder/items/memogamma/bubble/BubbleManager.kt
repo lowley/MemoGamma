@@ -70,8 +70,6 @@ object BubbleManager {
                                         viewModel.changeRecomposePersistencePopupTrigger()
                                     }
                                 }
-                                
-                                else -> {}
                             }
                         }
                     }
