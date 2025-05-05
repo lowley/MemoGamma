@@ -1,6 +1,7 @@
 package lorry.folder.items.memogamma.components.dataClasses
 
 import android.graphics.PointF
+import android.view.MotionEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -116,13 +117,15 @@ data class TwoFingersScrollState(
             instance = state
         }
 
-        fun setStartPoint(startPoint: DrawPoint): TwoFingersScrollState {
+        fun setStartPoint(motionEvent: MotionEvent): TwoFingersScrollState {
+            val startPoint = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
             defineInstance(ensureInstance().copy(startPoint = startPoint))
             return instance!!
         }
 
-        fun setEndPoint(endPoint: DrawPoint): TwoFingersScrollState {
-            defineInstance(ensureInstance().copy(endPoint = endPoint))
+        fun addPoint(motionEvent: MotionEvent): TwoFingersScrollState {
+            val point = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+            defineInstance(ensureInstance().copy(endPoint = point))
             return instance!!
         }
 

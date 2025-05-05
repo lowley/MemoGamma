@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Build
 import android.view.MotionEvent
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.lifecycle.ViewModel
@@ -33,6 +32,7 @@ import lorry.folder.items.memogamma.components.dataClasses.StylusState
 import lorry.folder.items.memogamma.components.dataClasses.StylusStatePath
 import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
 import lorry.folder.items.memogamma.components.extensions.createPath
+import lorry.folder.items.memogamma.components.extensions.translate
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 import javax.inject.Inject
@@ -69,7 +69,7 @@ class BubbleViewModel @Inject constructor(
 
     private val _stylusStroke = MutableStateFlow(Stroke(width = 1f))
     val stylusStroke: StateFlow<Stroke> = _stylusStroke
-    
+
     private var _initialStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
@@ -81,37 +81,37 @@ class BubbleViewModel @Inject constructor(
 
     private val _alarmClockPopupVisible = MutableStateFlow(false)
     val alarmClockPopupVisible: StateFlow<Boolean> = _alarmClockPopupVisible
-    
+
     private val _recomposePersistencePopupTrigger = MutableStateFlow(false)
     val recomposePersistencePopupTrigger: StateFlow<Boolean> = _recomposePersistencePopupTrigger
 
     private val _recomposeAlarmClockPopupTrigger = MutableStateFlow(false)
     val recomposeAlarmClockPopupTrigger: StateFlow<Boolean> = _recomposeAlarmClockPopupTrigger
-    
+
     var lastStateBeforeStylusDown: StylusState? = null
     var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val drawings = userPreferences.sheets
     val alarmClocks = userPreferences.alarmClocks
-    
+
 
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
     }
-    
+
     val alarmClockEnabled = alarmClocks.map { alarmClocks -> alarmClocks.isNotEmpty() }
     val currentAlarmClocksFlow: StateFlow<Set<AlarmClock>>
-        get()= alarmClocks.stateIn(
+        get() = alarmClocks.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = setOf()
         )
     val currentAlarmClocks: Set<AlarmClock>
-        get()= currentAlarmClocksFlow.value
-    
+        get() = currentAlarmClocksFlow.value
+
     ///////////////////////
     // actions sur flows //
     ///////////////////////
-    
+
     fun changeRecomposePersistencePopupTrigger() {
         _recomposePersistencePopupTrigger.value = !recomposePersistencePopupTrigger.value
     }
@@ -131,125 +131,90 @@ class BubbleViewModel @Inject constructor(
     fun setCurrentStylusState(state: StylusState) {
         _currentStylusState.value = state
     }
+    
+    fun setPointerCount(value: Int) {
+        _pointerCount.value = value 
+    }
+
+    fun setBubbleState(value: BubbleState) {
+        _bubbleState.value = value
+    }
+
+    fun setStylusColor(color: Color) {
+        _stylusColor.value = color
+    }
+
+    fun setPersistencePopupVisible(value: Boolean) {
+        _persistencePopupVisible.value = value
+    }
+
+    fun setAlarmClockPopupVisible(value: Boolean) {
+        _alarmClockPopupVisible.value = value
+    }
+
+    fun setState(state: StylusState) {
+        TwoFingersScrollState.reset()
+
+        _currentStylusState.value = state
+        _initialStylusState.value = state
+    }
+    
+    //////////////
+    // drawings //
+    //////////////
+
+    fun saveCurrentStateAs(state: StylusState, name: String, replace: Boolean = false) {
+        viewModelScope.launch {
+            if (replace)
+                userPreferences.update_sheet(state)
+            else
+                userPreferences.add_sheet(state.copy(name = name))
+        }
+    }
+
+    fun deleteDrawing(state: StylusState) {
+        viewModelScope.launch {
+            userPreferences.remove_sheet(state)
+        }
+    }
+
+    fun replaceName(state: StylusState, newName: String) {
+        viewModelScope.launch {
+            userPreferences.replaceName(state, newName)
+        }
+    }
+    
+    //////////////////
+    // alarm clocks //
+    //////////////////
+
+    fun deleteAlarmClock(clock: AlarmClock) {
+        viewModelScope.launch(Dispatchers.IO) {
+            userPreferences.removeAlarmClock(clock)
+        }
+    }
+
+    fun setAwaking(state: StylusState) {
+        val targetPackage = GammaAccessibilityService.currentPackage
+        if (targetPackage == null)
+            return
+
+        viewModelScope.launch(Dispatchers.IO) {
+            userPreferences.addAlarmClock(
+                AlarmClock(targetPackage, targetPackage, state.name)
+            )
+        }
+    }
+
+    /////////////////////
+    // méthodes métier //
+    /////////////////////
 
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
-        _pointerCount.update { motionEvent.pointerCount }
-        _activePointer.value = motionEvent.actionIndex;
-        _action.value = when (motionEvent.actionMasked) {
-            MotionEvent.ACTION_MOVE -> "ACTION_MOVE"
-            MotionEvent.ACTION_DOWN -> "ACTION_DOWN"
-            MotionEvent.ACTION_UP -> "ACTION_UP"
-            MotionEvent.ACTION_POINTER_DOWN -> "ACTION_POINTER_DOWN"
-            MotionEvent.ACTION_POINTER_UP -> "ACTION_POINTER_UP"
-            else -> "Inconnu"
-        }
 
-        if (motionEvent.pointerCount >= 1) {
-            _pointerName1.value = when (motionEvent.getToolType(0)) {
-                MotionEvent.TOOL_TYPE_STYLUS -> "0-Stylus"
-                MotionEvent.TOOL_TYPE_FINGER -> "0-Doigt"
-                MotionEvent.TOOL_TYPE_MOUSE -> "0-Souris"
-                MotionEvent.TOOL_TYPE_ERASER -> "0-Crayon"
-                else -> "0-Inconnu"
-            }
-        } else {
-            _pointerName1.value = ""
-            _pointerName2.value = ""
-        }
-        if (motionEvent.pointerCount >= 2)
-            _pointerName2.value = when (motionEvent.getToolType(1)) {
-                MotionEvent.TOOL_TYPE_STYLUS -> "1-Stylus"
-                MotionEvent.TOOL_TYPE_FINGER -> "1-Doigt"
-                MotionEvent.TOOL_TYPE_MOUSE -> "1-Souris"
-                MotionEvent.TOOL_TYPE_ERASER -> "1-Crayon"
-                else -> "1-Inconnu"
-            }
-        else {
-            _pointerName2.value = ""
-        }
+        //updateDebugIndicators(motionEvent)
 
-        println("GAMMA: Event reçu : ${motionEvent.actionMasked}, x=${motionEvent.x}, y=${motionEvent.y}")
-
-        when (motionEvent.actionMasked) {
-            MotionEvent.ACTION_MOVE -> {
-                if (motionEvent.pointerCount == 1 &&
-                    motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
-                ) {
-                    println("GAMMA : Scroll à 1 doigt détecté")
-                    TwoFingersScrollState.setEndPoint(
-                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                    )
-
-                    _currentStylusState.update { state ->
-                        val newItems = state.items.map { item ->
-                            val newPath = Path().apply {
-                                addPath(item.path)
-                                transform(Matrix().apply {
-                                    translate(
-                                        TwoFingersScrollState.deltaX ?: 0f,
-                                        TwoFingersScrollState.deltaY ?: 0f
-                                    )
-                                })
-                            }
-                            item.copy(path = newPath)
-                        }.toMutableList()
-
-                        StylusState(state.name, newItems)
-                    }
-                }
-
-                requestRendering(
-                    currentStylusState.value
-                )
-
-                TwoFingersScrollState.setStartPoint(
-                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                )
-            }
-
-            MotionEvent.ACTION_POINTER_DOWN -> {
-                //2e pointeur abaissé
-                println("GAMMA pointer down")
-                TwoFingersScrollState.setStartPoint(
-                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                )
-            }
-
-            MotionEvent.ACTION_POINTER_UP -> {
-                //2e pointeur est levé
-                println("GAMMA pointer up")
-                TwoFingersScrollState.reset()
-            }
-
-            MotionEvent.ACTION_DOWN -> {
-                if (motionEvent.pointerCount == 1 &&
-                    motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
-                ) {
-                    //2e pointeur abaissé
-                    println("GAMMA pointer down")
-                    TwoFingersScrollState.setStartPoint(
-                        DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                    )
-                }
-            }
-
-            MotionEvent.ACTION_UP -> {
-                if (motionEvent.pointerCount == 1 &&
-                    motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
-                ) {
-                    TwoFingersScrollState.reset()
-                } else {
-                    //1er pointeur est levé
-                    println("GAMMA up")
-                    _pointerCount.value = 0
-                }
-            }
-
-            MotionEvent.ACTION_CANCEL -> {
-                println("GAMMA cancel")
-                _pointerCount.value = 0
-            }
-        }
+        fingerTranslation(motionEvent)
 
         //main ou doigt
         val stylusIndex = (0..motionEvent.pointerCount - 1).firstOrNull {
@@ -275,8 +240,8 @@ class BubbleViewModel @Inject constructor(
                     newItems.add(
                         StylusStatePath(
                             path = mutableListOf(
-                                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)).createPath()
-                            ,
+                                DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                            ).createPath(),
                             color = stylusColor.value,
                             style = stylusStroke.value,
                             pointList = mutableListOf(
@@ -359,13 +324,94 @@ class BubbleViewModel @Inject constructor(
         return true
     }
 
+    private fun fingerTranslation(motionEvent: MotionEvent) {
+        val oneFinger = motionEvent.pointerCount == 1 &&
+                motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER
 
-    fun setBubbleState(value: BubbleState) {
-        _bubbleState.value = value
+        when (motionEvent.actionMasked) {
+            MotionEvent.ACTION_MOVE -> {
+                if (oneFinger) {
+                    //Scroll à 1 doigt détecté"
+                    TwoFingersScrollState.addPoint(motionEvent)
+
+                    _currentStylusState.update { state ->
+                        val newItems = state.items.translate(TwoFingersScrollState)
+
+                        StylusState(state.name, newItems)
+                    }
+                }
+
+                requestRendering(currentStylusState.value)
+                TwoFingersScrollState.setStartPoint(motionEvent)
+            }
+
+            MotionEvent.ACTION_POINTER_DOWN -> {
+                //2e pointeur abaissé
+                TwoFingersScrollState.setStartPoint(motionEvent)
+            }
+
+            MotionEvent.ACTION_POINTER_UP -> {
+                //2e pointeur est levé
+                TwoFingersScrollState.reset()
+            }
+
+            MotionEvent.ACTION_DOWN -> {
+                if (oneFinger) {
+                    //2e pointeur abaissé
+                    TwoFingersScrollState.setStartPoint(motionEvent)
+                }
+            }
+
+            MotionEvent.ACTION_UP -> {
+                if (oneFinger) {
+                    TwoFingersScrollState.reset()
+                } else {
+                    //1er pointeur est levé
+                    setPointerCount(0)
+                }
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                setPointerCount(0)
+            }
+        }
     }
 
-    fun create() {
-        println("THOO: create lancé...")
+    private fun updateDebugIndicators(motionEvent: MotionEvent) {
+        _pointerCount.update { motionEvent.pointerCount }
+        _activePointer.value = motionEvent.actionIndex;
+        _action.value = when (motionEvent.actionMasked) {
+            MotionEvent.ACTION_MOVE -> "ACTION_MOVE"
+            MotionEvent.ACTION_DOWN -> "ACTION_DOWN"
+            MotionEvent.ACTION_UP -> "ACTION_UP"
+            MotionEvent.ACTION_POINTER_DOWN -> "ACTION_POINTER_DOWN"
+            MotionEvent.ACTION_POINTER_UP -> "ACTION_POINTER_UP"
+            else -> "Inconnu"
+        }
+
+        if (motionEvent.pointerCount >= 1) {
+            _pointerName1.value = when (motionEvent.getToolType(0)) {
+                MotionEvent.TOOL_TYPE_STYLUS -> "0-Stylus"
+                MotionEvent.TOOL_TYPE_FINGER -> "0-Doigt"
+                MotionEvent.TOOL_TYPE_MOUSE -> "0-Souris"
+                MotionEvent.TOOL_TYPE_ERASER -> "0-Crayon"
+                else -> "0-Inconnu"
+            }
+        } else {
+            _pointerName1.value = ""
+            _pointerName2.value = ""
+        }
+        if (motionEvent.pointerCount >= 2)
+            _pointerName2.value = when (motionEvent.getToolType(1)) {
+                MotionEvent.TOOL_TYPE_STYLUS -> "1-Stylus"
+                MotionEvent.TOOL_TYPE_FINGER -> "1-Doigt"
+                MotionEvent.TOOL_TYPE_MOUSE -> "1-Souris"
+                MotionEvent.TOOL_TYPE_ERASER -> "1-Crayon"
+                else -> "1-Inconnu"
+            }
+        else {
+            _pointerName2.value = ""
+        }
     }
 
     private fun cancelLastStroke() {
@@ -382,68 +428,7 @@ class BubbleViewModel @Inject constructor(
         }
     }
 
-    fun setStylusColor(color: Color) {
-        _stylusColor.value = color
-    }
-
-    fun saveCurrentStateAs(state: StylusState, name: String, replace: Boolean = false) {
-        viewModelScope.launch {
-            if (replace)
-                userPreferences.update_sheet(state)
-            else
-                userPreferences.add_sheet(state.copy(name = name))
-        }
-    }
-
-    fun setState(state: StylusState) {
-        TwoFingersScrollState.reset()
-
-        _currentStylusState.value = state
-        _initialStylusState.value = state
-    }
-
-    fun setPersistencePopupVisible(value: Boolean) {
-        _persistencePopupVisible.value = value
-    }
-    
-    fun setAlarmClockPopupVisible(value: Boolean) {
-        _alarmClockPopupVisible.value = value
-    }
-
-    fun deleteDrawing(state: StylusState) {
-        viewModelScope.launch {
-            userPreferences.remove_sheet(state)
-        }
-    }
-
-    fun setAwaking(state: StylusState) {
-        val targetPackage = GammaAccessibilityService.currentPackage
-        if (targetPackage == null)
-            return
-
-        viewModelScope.launch(Dispatchers.IO) {
-            userPreferences.addAlarmClock(
-                AlarmClock(targetPackage, targetPackage,state.name)
-            )
-        }
-    }
-
-    fun deleteAlarmClock(clock: AlarmClock) {
-        viewModelScope.launch(Dispatchers.IO) {
-            userPreferences.removeAlarmClock(clock)
-        }
-    }
-
-    fun replaceName(state: StylusState, newName: String) {
-        viewModelScope.launch { 
-            userPreferences.replaceName(state, newName)
-        }
-    }
-
     init {
-        println("THOO: init() exécutée...")
-        create()
-
         viewModelScope.launch {
             intentChannel.consumeAsFlow<BubbleIntent>().collect { intent: BubbleIntent ->
                 when (intent) {

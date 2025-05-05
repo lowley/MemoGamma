@@ -4,6 +4,8 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import lorry.folder.items.memogamma.components.dataClasses.DrawPoint
 import lorry.folder.items.memogamma.components.dataClasses.DrawPointType
+import lorry.folder.items.memogamma.components.dataClasses.StylusStatePath
+import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
 
 fun Path.translate(dx: Float, dy: Float): Path {
     val matrix = Matrix()
@@ -23,4 +25,19 @@ fun MutableList<DrawPoint>.createPath(): Path {
         }
     }
     return path
+}
+
+fun MutableList<StylusStatePath>.translate(twoFingersScrollState: TwoFingersScrollState.Companion): MutableList<StylusStatePath> {
+    return this.map { item ->
+        val newPath = Path().apply {
+            addPath(item.path)
+            transform(Matrix().apply {
+                translate(
+                    twoFingersScrollState.deltaX ?: 0f,
+                    twoFingersScrollState.deltaY ?: 0f
+                )
+            })
+        }
+        item.copy(path = newPath)
+    }.toMutableList()
 }
