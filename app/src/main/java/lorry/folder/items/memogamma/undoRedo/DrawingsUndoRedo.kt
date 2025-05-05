@@ -1,18 +1,18 @@
 package lorry.folder.items.memogamma.undoRedo
 
-import lorry.folder.items.memogamma.bubble.BubbleViewModel
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
+import lorry.folder.items.memogamma.ui.ScreenInteraction
 
 class DrawingsUndoRedo(
     override val oldState: StylusState,
     override val newState: StylusState,
-    val viewModel: BubbleViewModel
+    val screenInteraction: ScreenInteraction
 ) : IUndoRedo<StylusState> {
     override fun doChange() {
-        viewModel.setCurrentStylusState(newState.copyDeep())
+        screenInteraction.setCurrentStylusState(newState.copyDeep())
     }
 
     override fun undoChange() {
-        viewModel.setCurrentStylusState(oldState.copyDeep())
+        screenInteraction.setCurrentStylusState(oldState.copyDeep())
     }
 }
