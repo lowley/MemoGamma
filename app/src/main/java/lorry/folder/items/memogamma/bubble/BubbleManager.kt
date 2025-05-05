@@ -12,6 +12,7 @@ import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
 import lorry.folder.items.memogamma.components.dataClasses.BubbleIntent
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
+import lorry.folder.items.memogamma.ui.ScreenInteraction
 
 object BubbleManager {
     private var floatingWindow: ComposeFloatingWindow? = null
@@ -24,16 +25,17 @@ object BubbleManager {
     fun showBubble(context: Context) {
         if (floatingWindow == null) {
             val userPreferences = UserPreferences(context.applicationContext)
+            val screenInteraction: ScreenInteraction = ScreenInteraction()
             floatingWindow = ComposeFloatingWindow(context.applicationContext).apply {
                 setContent {
                     viewModel = ViewModelProvider(
                         ViewModelStore(),
                         VideoShortcutsBubbleViewModelFactory(
-                            context.applicationContext, userPreferences
+                            context.applicationContext, userPreferences, screenInteraction
                         )
                     )[BubbleViewModel::class.java]
 
-                    var stylusState = viewModel.currentStylusState
+                    var stylusState = viewModel.screenInteraction.currentStylusState
                     var drawings = userPreferences.sheets
                     
                     LaunchedEffect(Unit) {
@@ -58,12 +60,12 @@ object BubbleManager {
                                             drawing.name == intent.name
                                         }
                                     if (drawing != null) {
-                                        viewModel.setState(drawing)
+                                        viewModel.screenInteraction.setState(drawing)
                                         viewModel.setPersistencePopupVisible(false)
                                         viewModel.changeRecomposePersistencePopupTrigger()
                                     }
                                     if (intent.name == StylusState.DEFAULT.name) {
-                                        viewModel.setState(StylusState.DEFAULT)
+                                        viewModel.screenInteraction.setState(StylusState.DEFAULT)
                                         viewModel.setPersistencePopupVisible(false)
                                         viewModel.changeRecomposePersistencePopupTrigger()
                                     }

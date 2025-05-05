@@ -61,13 +61,13 @@ import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 fun BubbleContent(viewModel: BubbleViewModel) {
     //val floatingWindow = LocalFloatingWindow.current
     val visibilityState by viewModel.bubbleState.collectAsState(BubbleState.HIDDEN)
-    val stylusColor by viewModel.stylusColor.collectAsState()
+    val stylusColor by viewModel.screenInteraction.stylusColor.collectAsState()
     val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
     val showAlarmClockPopup = viewModel.alarmClockPopupVisible.collectAsState(false)
     val recomposePersistenceTriggerPopup by viewModel.recomposePersistencePopupTrigger.collectAsState()
     val recomposeAlarmClockTriggerPopup by viewModel.recomposeAlarmClockPopupTrigger.collectAsState()
     val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState(false)
-    val currentdrawing by viewModel.currentStylusState.collectAsState()
+    val currentdrawing by viewModel.screenInteraction.currentStylusState.collectAsState()
     val alarmClocks by viewModel.alarmClocks.collectAsState(initial = emptySet())
 //    val pointerCount by viewModel.screenInteraction.pointerCount.collectAsState()
 //    val activePointer by viewModel.screenInteraction.activePointer.collectAsState()
@@ -239,7 +239,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 
             if (visibilityState == BubbleState.TOTAL) {
 
-                val stylusState by viewModel.currentStylusState.collectAsState()
+                val stylusState by viewModel.screenInteraction.currentStylusState.collectAsState()
 
                 StylusVisualization(
                     modifier = Modifier
@@ -300,7 +300,7 @@ fun StylusVisualization(
                             stylusColor, Color(0xFFA82D2D), viewModel
                         )
                     )
-                    viewModel.setStylusColor(Color(0xFFA82D2D))
+                    viewModel.screenInteraction.setStylusColor(Color(0xFFA82D2D))
                 }
                 .size(arrowSize),
             painter = if (stylusColor == Color(0xFFA82D2D))
@@ -323,7 +323,7 @@ fun StylusVisualization(
                             stylusColor, Color(0xFF429325), viewModel
                         )
                     )
-                    viewModel.setStylusColor(Color(0xFF429325))
+                    viewModel.screenInteraction.setStylusColor(Color(0xFF429325))
                 },
             painter = if (stylusColor == Color(0xFF429325))
                 painterResource(R.drawable.stylo_plume_trait)
@@ -345,7 +345,7 @@ fun StylusVisualization(
                             stylusColor, Color(0xFF5068C2), viewModel
                         )
                     )
-                    viewModel.setStylusColor(Color(0xFF5068C2))
+                    viewModel.screenInteraction.setStylusColor(Color(0xFF5068C2))
                 },
             painter = if (stylusColor == Color(0xFF5068C2))
                 painterResource(R.drawable.stylo_plume_trait)
@@ -367,7 +367,7 @@ fun StylusVisualization(
                             stylusColor, Color(0xFF000000), viewModel
                         )
                     )
-                    viewModel.setStylusColor(Color(0xFF000000))
+                    viewModel.screenInteraction.setStylusColor(Color(0xFF000000))
                 },
             painter = if (stylusColor == Color(0xFF000000))
                 painterResource(R.drawable.stylo_plume_trait)
@@ -380,7 +380,7 @@ fun StylusVisualization(
             modifier = Modifier.weight(1f)
         )
 
-        var stroke = viewModel.stylusStroke.collectAsState()
+        var stroke = viewModel.screenInteraction.stylusStroke.collectAsState()
 
         Text(
             modifier = Modifier
@@ -402,7 +402,7 @@ fun StylusVisualization(
                     sliderStartValue =
                         stroke.value.width // Capture l'ancienne valeur au 1er changement
                 }
-                viewModel.setStylusStroke(Stroke(it))
+                viewModel.screenInteraction.setStylusStroke(Stroke(it))
             },
             onValueChangeFinished = {
                 if (sliderStartValue != null) {
