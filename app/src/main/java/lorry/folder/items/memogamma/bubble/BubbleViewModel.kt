@@ -32,6 +32,7 @@ import lorry.folder.items.memogamma.components.dataClasses.DrawPointType
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
 import lorry.folder.items.memogamma.components.dataClasses.StylusStatePath
 import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
+import lorry.folder.items.memogamma.components.extensions.createPath
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 import java.util.UUID
@@ -42,22 +43,6 @@ class BubbleViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val userPreferences: IUserPreferences
 ) : ViewModel() {
-
-    companion object {
-        fun createPath(points: MutableList<DrawPoint>): Path {
-            val path = Path()
-
-            for (point in points) {
-                if (point.type == DrawPointType.START) {
-                    path.moveTo(point.x, point.y)
-                } else {
-                    path.lineTo(point.x, point.y)
-                }
-            }
-            return path
-        }
-    }
-
     val Id: UUID = UUID.randomUUID()
 
     private val _bubbleState = MutableStateFlow(BubbleState.BUBBLE)
@@ -125,7 +110,6 @@ class BubbleViewModel @Inject constructor(
         )
     val currentAlarmClocks: Set<AlarmClock>
         get()= currentAlarmClocksFlow.value
-    
     
     fun changeRecomposePersistencePopupTrigger() {
         _recomposePersistencePopupTrigger.value = !recomposePersistencePopupTrigger.value
@@ -295,11 +279,9 @@ class BubbleViewModel @Inject constructor(
                     }
                     newItems.add(
                         StylusStatePath(
-                            path = createPath(
-                                mutableListOf(
-                                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
-                                )
-                            ),
+                            path = mutableListOf(
+                                    DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)).createPath()
+                            ,
                             color = stylusColor.value,
                             style = stylusStroke.value,
                             pointList = mutableListOf(

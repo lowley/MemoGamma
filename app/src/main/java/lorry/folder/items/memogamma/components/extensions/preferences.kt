@@ -4,7 +4,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.toColorInt
-import lorry.folder.items.memogamma.bubble.BubbleViewModel
 import lorry.folder.items.memogamma.components.dataClasses.AlarmClock
 import lorry.folder.items.memogamma.components.dataClasses.DrawPoint
 import lorry.folder.items.memogamma.components.dataClasses.DrawPointType
@@ -67,7 +66,7 @@ fun String.toStylusState(): StylusState {
             points.add(DrawPoint(x, y, type))
         }
 
-        val path = BubbleViewModel.createPath(points)
+        val path = points.createPath()
         items.add(StylusStatePath(path, color, stroke, points))
     }
 
