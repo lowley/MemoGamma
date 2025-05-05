@@ -8,15 +8,16 @@ import dagger.hilt.InstallIn
 import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
 import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
+import lorry.folder.items.memogamma.ui.ScreenInteraction
 
 @Module
 @InstallIn(dagger.hilt.components.SingletonComponent::class)
 abstract class DataInjections {
-//
-//    @dagger.Binds
-//    abstract fun bindFileAccessDataSource(
-//        fileAccessDataSource: FileAccessDS
-//    ): IFileAccessDS
+
+    @dagger.Binds
+    abstract fun bindScreenInteraction(
+        screenInteraction: ScreenInteraction
+    ): ScreenInteraction
 
     //
 //    @Binds
@@ -88,11 +89,12 @@ class DataInjections2 {
 
 class VideoShortcutsBubbleViewModelFactory(
     private val context: Context,
-    private val userPreferences: IUserPreferences
+    private val userPreferences: IUserPreferences,
+    private val screenInteraction: ScreenInteraction
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(BubbleViewModel::class.java)) {
-            return BubbleViewModel(context, userPreferences) as T
+            return BubbleViewModel(context, userPreferences, screenInteraction) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

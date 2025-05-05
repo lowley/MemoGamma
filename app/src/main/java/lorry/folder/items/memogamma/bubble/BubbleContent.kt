@@ -62,11 +62,6 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     //val floatingWindow = LocalFloatingWindow.current
     val visibilityState by viewModel.bubbleState.collectAsState(BubbleState.HIDDEN)
     val stylusColor by viewModel.stylusColor.collectAsState()
-//    val pointerCount by viewModel.pointerCount.collectAsState()
-//    val pointerName1 by viewModel.pointerName1.collectAsState()
-//    val pointerName2 by viewModel.pointerName2.collectAsState()
-//    val action by viewModel.pointerAction.collectAsState()
-//    val activePointer by viewModel.activePointer.collectAsState()
     val showPersistencePopup = viewModel.persistencePopupVisible.collectAsState(false)
     val showAlarmClockPopup = viewModel.alarmClockPopupVisible.collectAsState(false)
     val recomposePersistenceTriggerPopup by viewModel.recomposePersistencePopupTrigger.collectAsState()
@@ -74,7 +69,12 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState(false)
     val currentdrawing by viewModel.currentStylusState.collectAsState()
     val alarmClocks by viewModel.alarmClocks.collectAsState(initial = emptySet())
-
+//    val pointerCount by viewModel.screenInteraction.pointerCount.collectAsState()
+//    val activePointer by viewModel.screenInteraction.activePointer.collectAsState()
+//    val pointerAction by viewModel.screenInteraction.pointerAction.collectAsState()
+//    val pointerName1 by viewModel.screenInteraction.pointerName1.collectAsState()
+//    val pointerName2 by viewModel.screenInteraction.pointerName2.collectAsState()
+    
     Surface(
         modifier = Modifier
             //.align(Alignment.Center)
@@ -254,7 +254,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 //                Row {
 //                    Text(text = "nb:${pointerCount}", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "actPtr:${activePointer}", modifier = Modifier.padding(end = 5.dp))
-//                    Text(text = "action:${action}", modifier = Modifier.padding(end = 5.dp))
+//                    Text(text = "action:${pointerAction}", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName2")
 //                }
@@ -447,7 +447,7 @@ fun DrawArea(
             .clickable(enabled = true) {}
             .clipToBounds()
             .pointerInteropFilter {
-                viewModel.processMotionEvent(it)
+                viewModel.screenInteraction.processMotionEvent(it)
             }
     ) {
         stylusState.items.forEach { item ->
