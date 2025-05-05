@@ -13,13 +13,7 @@ import lorry.folder.items.memogamma.ui.ScreenInteraction
 @Module
 @InstallIn(dagger.hilt.components.SingletonComponent::class)
 abstract class DataInjections {
-
-    @dagger.Binds
-    abstract fun bindScreenInteraction(
-        screenInteraction: ScreenInteraction
-    ): ScreenInteraction
-
-    //
+    
 //    @Binds
 //    abstract fun bindFfmpegDataSource(
 //        ffmpegDataSource: DS_ffmpeg

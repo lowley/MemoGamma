@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +36,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
@@ -92,10 +94,11 @@ fun Body(
     modifier: Modifier = Modifier,
     viewModel: BubbleViewModel
 ) {
-    val arrowSize = 30.dp
-    val eyeSize = 35.dp
-    var newName by remember { mutableStateOf("") }
-    val initialStylusState by viewModel.screenInteraction.initialStylusState.collectAsState()
+    val arrowSize: Dp = 30.dp
+    val eyeSize: Dp = 35.dp
+    var newName by remember<MutableState<String>> { mutableStateOf<String>("") }
+    val initialStylusState by viewModel.screenInteraction.initialStylusState.collectAsState(
+        StylusState.DEFAULT)
     val currentStylusState by viewModel.screenInteraction.currentStylusState.collectAsState()
     val sheets by viewModel.drawings.collectAsState(emptySet())
 

@@ -10,10 +10,10 @@ class StylusStrokeUndoRedo(
     : IUndoRedo<Stroke> {
     
     override fun doChange() {
-        viewModel.setStylusStroke(newState)
+        viewModel.screenInteraction.setStylusStroke(newState)
     }
 
     override fun undoChange() {
-        viewModel.setStylusStroke(oldState)
+        viewModel.screenInteraction.setStylusStroke(oldState)
     }
 }

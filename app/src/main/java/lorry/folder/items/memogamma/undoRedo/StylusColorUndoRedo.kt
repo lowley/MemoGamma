@@ -10,10 +10,10 @@ class StylusColorUndoRedo(
 ) : IUndoRedo<Color> {
     
     override fun doChange() {
-        viewModel.setStylusColor(newState)
+        viewModel.screenInteraction.setStylusColor(newState)
     }
 
     override fun undoChange() {
-        viewModel.setStylusColor(oldState)
+        viewModel.screenInteraction.setStylusColor(oldState)
     }
 }
