@@ -35,7 +35,6 @@ import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
 import lorry.folder.items.memogamma.components.extensions.createPath
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -43,7 +42,6 @@ class BubbleViewModel @Inject constructor(
     @ApplicationContext val context: Context,
     val userPreferences: IUserPreferences
 ) : ViewModel() {
-    val Id: UUID = UUID.randomUUID()
 
     private val _bubbleState = MutableStateFlow(BubbleState.BUBBLE)
     val bubbleState: StateFlow<BubbleState> = _bubbleState
@@ -71,9 +69,7 @@ class BubbleViewModel @Inject constructor(
 
     private val _stylusStroke = MutableStateFlow(Stroke(width = 1f))
     val stylusStroke: StateFlow<Stroke> = _stylusStroke
-
-    var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
+    
     private var _initialStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
@@ -86,21 +82,22 @@ class BubbleViewModel @Inject constructor(
     private val _alarmClockPopupVisible = MutableStateFlow(false)
     val alarmClockPopupVisible: StateFlow<Boolean> = _alarmClockPopupVisible
     
-    var lastStateBeforeStylusDown: StylusState? = null
-
-    val drawings = userPreferences.sheets
-    
     private val _recomposePersistencePopupTrigger = MutableStateFlow(false)
     val recomposePersistencePopupTrigger: StateFlow<Boolean> = _recomposePersistencePopupTrigger
 
     private val _recomposeAlarmClockPopupTrigger = MutableStateFlow(false)
     val recomposeAlarmClockPopupTrigger: StateFlow<Boolean> = _recomposeAlarmClockPopupTrigger
+    
+    var lastStateBeforeStylusDown: StylusState? = null
+    var coroutineScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    val drawings = userPreferences.sheets
+    val alarmClocks = userPreferences.alarmClocks
+    
 
     private fun requestRendering(stylusState: StylusState) {
         _currentStylusState.value = stylusState
     }
     
-    val alarmClocks = userPreferences.alarmClocks
     val alarmClockEnabled = alarmClocks.map { alarmClocks -> alarmClocks.isNotEmpty() }
     val currentAlarmClocksFlow: StateFlow<Set<AlarmClock>>
         get()= alarmClocks.stateIn(
@@ -110,6 +107,10 @@ class BubbleViewModel @Inject constructor(
         )
     val currentAlarmClocks: Set<AlarmClock>
         get()= currentAlarmClocksFlow.value
+    
+    ///////////////////////
+    // actions sur flows //
+    ///////////////////////
     
     fun changeRecomposePersistencePopupTrigger() {
         _recomposePersistencePopupTrigger.value = !recomposePersistencePopupTrigger.value
@@ -231,12 +232,6 @@ class BubbleViewModel @Inject constructor(
                     )
                 }
             }
-
-//            MotionEvent.ACTION_UP -> {
-//                //2e pointeur est levé
-//                println("GAMMA pointer up")
-//                TwoFingersScrollState.reset()
-//            }
 
             MotionEvent.ACTION_UP -> {
                 if (motionEvent.pointerCount == 1 &&
