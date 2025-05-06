@@ -112,9 +112,7 @@ class ScreenInteraction @Inject constructor(
 
                     val newState = StylusState(currentStylusState.value.name, newItems)
 
-                    _currentStylusState.update { state ->
-                        newState
-                    }
+                    _currentStylusState.update { state -> newState }
                 }
 
                 MotionEvent.ACTION_MOVE -> {

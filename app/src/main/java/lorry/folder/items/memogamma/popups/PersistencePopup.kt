@@ -209,7 +209,7 @@ fun Body(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(24.dp)
+                            .height(50.dp)
                             .align(Alignment.CenterVertically)
                             .clickable {
                                 viewModel.screenInteraction.setState(drawing)
