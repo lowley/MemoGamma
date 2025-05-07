@@ -1,7 +1,7 @@
 package lorry.folder.items.memogamma.undoRedo
 
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
-import lorry.folder.items.memogamma.ui.ScreenInteraction
+import lorry.folder.items.memogamma.ui.canvas.ScreenInteraction
 
 class DrawingsUndoRedo(
     override val oldState: StylusState,

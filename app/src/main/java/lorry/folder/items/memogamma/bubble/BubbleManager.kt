@@ -12,7 +12,7 @@ import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.components.VideoShortcutsBubbleViewModelFactory
 import lorry.folder.items.memogamma.components.dataClasses.BubbleIntent
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
-import lorry.folder.items.memogamma.ui.ScreenInteraction
+import lorry.folder.items.memogamma.ui.canvas.ScreenInteraction
 
 object BubbleManager {
     private var floatingWindow: ComposeFloatingWindow? = null

@@ -28,6 +28,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -40,11 +41,13 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -67,13 +70,15 @@ fun BubbleContent(viewModel: BubbleViewModel) {
     val recomposePersistenceTriggerPopup by viewModel.recomposePersistencePopupTrigger.collectAsState()
     val recomposeAlarmClockTriggerPopup by viewModel.recomposeAlarmClockPopupTrigger.collectAsState()
     val alarmClockEnabled by viewModel.alarmClockEnabled.collectAsState(false)
-    val currentdrawing by viewModel.screenInteraction.currentStylusState.collectAsState()
+    val currentDrawing by viewModel.screenInteraction.currentStylusState.collectAsState()
     val alarmClocks by viewModel.alarmClocks.collectAsState(initial = emptySet())
 //    val pointerCount by viewModel.screenInteraction.pointerCount.collectAsState()
 //    val activePointer by viewModel.screenInteraction.activePointer.collectAsState()
 //    val pointerAction by viewModel.screenInteraction.pointerAction.collectAsState()
 //    val pointerName1 by viewModel.screenInteraction.pointerName1.collectAsState()
 //    val pointerName2 by viewModel.screenInteraction.pointerName2.collectAsState()
+//    val offsetStateX by remember { derivedStateOf { viewModel.screenInteraction.x } }
+//    val offsetStateY by remember { derivedStateOf { viewModel.screenInteraction.y } }
     
     Surface(
         modifier = Modifier
@@ -150,7 +155,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                                         }
                                     },
                                     onLongPress = {
-                                        viewModel.setAwaking(state = currentdrawing)
+                                        viewModel.setAwaking(state = currentDrawing)
                                     }
                                 )
                             }
@@ -160,7 +165,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                         tint = Color.Unspecified,
                         contentDescription = "Ouvrir / Fermer"
                     )
-                    
+
                     Text(
                         text = alarmClocks.size.toString()
                     )
@@ -171,7 +176,7 @@ fun BubbleContent(viewModel: BubbleViewModel) {
                             modifier = Modifier
                                 .width(300.dp)
                                 .height(40.dp),
-                            text = if (currentdrawing.name.isEmpty()) "Saisie de dessin" else currentdrawing.name,
+                            text = if (currentDrawing.name.isEmpty()) "Saisie de dessin" else currentDrawing.name,
                             textAlign = TextAlign.Center,
                             fontSize = 20.sp
                         )
@@ -257,6 +262,8 @@ fun BubbleContent(viewModel: BubbleViewModel) {
 //                    Text(text = "action:${pointerAction}", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName1", modifier = Modifier.padding(end = 5.dp))
 //                    Text(text = "typ$pointerName2")
+                    
+//                    Text(text =  String.format(java.util.Locale.FRENCH, "%.0f", offsetStateX) + " : " + String.format(java.util.Locale.FRENCH,"%.0f", offsetStateY))
 //                }
 
                 HorizontalDivider(
@@ -439,27 +446,41 @@ fun DrawArea(
     viewModel: BubbleViewModel,
     stylusState: StylusState,
 ) {
-    Canvas(
+    val canvasSize: DpSize = DpSize(2000.dp, 2000.dp)
+    val visualOffset by remember { derivedStateOf { viewModel.screenInteraction.screenScroll.visualOffsetState } }
+    
+    Box(
         modifier = modifier
-            .fillMaxSize()
-            .background(Color.White)
-//            .border(1.dp, Color.Red)
-            .clickable(enabled = true) {}
-            .clipToBounds()
-            .pointerInteropFilter {
-                viewModel.screenInteraction.processMotionEvent(it)
-            }
+            .size(canvasSize)
     ) {
-        stylusState.items.forEach { item ->
-            drawPath(
-                path = item.path,
-                color = item.color,
-                style = item.style
-            )
+        Canvas(
+            modifier = Modifier
+                .size(canvasSize)
+                .background(Color.White)
+                .pointerInteropFilter {
+                    viewModel.screenInteraction.processScrollEvent(it)
+                    viewModel.screenInteraction.processMotionEvent(it)
+                    true
+                }
+//            .border(1.dp, Color.Red)
+                .clickable(enabled = true) {}
+                .clipToBounds()
+        ) {
+
+            withTransform({
+                translate(visualOffset.x, visualOffset.y)
+            }) {
+                stylusState.items.forEach { item ->
+                    drawPath(
+                        path = item.path,
+                        color = item.color,
+                        style = item.style
+                    )
+                }
+            }
         }
     }
 }
-
 
 
 

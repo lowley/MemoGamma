@@ -8,7 +8,7 @@ import dagger.hilt.InstallIn
 import lorry.folder.items.memogamma.__data.userPreferences.IUserPreferences
 import lorry.folder.items.memogamma.__data.userPreferences.UserPreferences
 import lorry.folder.items.memogamma.bubble.BubbleViewModel
-import lorry.folder.items.memogamma.ui.ScreenInteraction
+import lorry.folder.items.memogamma.ui.canvas.ScreenInteraction
 
 @Module
 @InstallIn(dagger.hilt.components.SingletonComponent::class)

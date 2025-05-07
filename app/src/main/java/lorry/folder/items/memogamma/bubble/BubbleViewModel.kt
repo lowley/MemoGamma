@@ -21,7 +21,7 @@ import lorry.folder.items.memogamma.bubble.BubbleManager.intentChannel
 import lorry.folder.items.memogamma.components.dataClasses.AlarmClock
 import lorry.folder.items.memogamma.components.dataClasses.BubbleIntent
 import lorry.folder.items.memogamma.components.dataClasses.StylusState
-import lorry.folder.items.memogamma.ui.ScreenInteraction
+import lorry.folder.items.memogamma.ui.canvas.ScreenInteraction
 import javax.inject.Inject
 
 @HiltViewModel

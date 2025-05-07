@@ -1,9 +1,19 @@
-package lorry.folder.items.memogamma.ui
+package lorry.folder.items.memogamma.ui.canvas
 
+import android.graphics.PointF
 import android.view.MotionEvent
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.core.view.MotionEventCompat.ACTION_HOVER_ENTER
+import androidx.core.view.MotionEventCompat.ACTION_HOVER_EXIT
+import androidx.core.view.MotionEventCompat.ACTION_HOVER_MOVE
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -13,27 +23,68 @@ import lorry.folder.items.memogamma.components.dataClasses.StylusState
 import lorry.folder.items.memogamma.components.dataClasses.StylusStatePath
 import lorry.folder.items.memogamma.components.dataClasses.TwoFingersScrollState
 import lorry.folder.items.memogamma.components.extensions.createPath
-import lorry.folder.items.memogamma.components.extensions.translate
 import lorry.folder.items.memogamma.undoRedo.DrawingsUndoRedo
 import lorry.folder.items.memogamma.undoRedo.UndoRedoManager
 import javax.inject.Inject
 
+//👆 DOIGT EN BAS       ─▶ startPoint = (x0, y0)
+//─▶ internalVisualOffset = totalTranslation
+//─▶ visualOffsetState = totalTranslation
+//
+//👉 DOIGT GLISSE       ─▶ endPoint = (x1, y1)
+//─▶ currentDelta = end - start
+//─▶ internalVisualOffset = totalTranslation + currentDelta
+//─▶ visualOffsetState = totalTranslation + currentDelta
+//⎡
+//🎨 CANVAS             ────────────────────────────────────────────────┘
+//└▶ `translate(visualOffsetState.x, visualOffsetState.y)`
+//← décalage visuel appliqué à tout le dessin
+//
+//✋ DOIGT LEVÉ         ─▶ delta = end - start
+//─▶ totalTranslation += delta
+//─▶ visualOffsetState = totalTranslation
+//
+//✍ STYLET EN BAS      ─▶ motionEvent.x, y (brut)
+//└▶ DrawPoint(x, y)
+//⎡
+//🎨 CANVAS             ─────────────────────────────────┘
+//└▶ `translate(...)` fait en sorte que le point
+//soit affiché au bon endroit (sous le stylet)
+
 class ScreenInteraction @Inject constructor(
-    
+
 ) {
-    private val _stylusColor = MutableStateFlow(Color.Black)
+    private val _stylusColor = MutableStateFlow(Color.Companion.Black)
     val stylusColor: StateFlow<Color> = _stylusColor
 
     private val _stylusStroke = MutableStateFlow(Stroke(width = 1f))
     val stylusStroke: StateFlow<Stroke> = _stylusStroke
 
-    private var _initialStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
+    private var _initialStylusState =
+        MutableStateFlow(StylusState(StylusState.Companion.DEFAULT.name))
     val initialStylusState: StateFlow<StylusState> = _initialStylusState
 
-    private var _currentStylusState = MutableStateFlow(StylusState(StylusState.DEFAULT.name))
+    private var _currentStylusState =
+        MutableStateFlow(StylusState(StylusState.Companion.DEFAULT.name))
     val currentStylusState: StateFlow<StylusState> = _currentStylusState
 
     var lastStateBeforeStylusDown: StylusState? = null
+
+    var translationState by mutableStateOf(TwoFingersScrollState(null, null))
+    val translateX = derivedStateOf { (translationState.xvar ?: 0f) + totalTranslation.x }
+    val translateY = derivedStateOf { (translationState.yvar ?: 0f) + totalTranslation.y }
+
+    var totalTranslation = PointF(0f, 0f)
+    val screenScroll = ScreenScroll()
+
+    val visualOffset: Offset
+        get() = screenScroll.visualOffset
+
+    val totalOffset: Offset
+        get() = screenScroll.totalTranslation
+
+    var x by mutableFloatStateOf(0f)
+    var y by mutableFloatStateOf(0f)
     
     ///////////////////////////////
     // flows > actions sur flows //
@@ -60,26 +111,44 @@ class ScreenInteraction @Inject constructor(
     }
 
     fun setState(state: StylusState) {
-        TwoFingersScrollState.reset()
+        TwoFingersScrollState.Companion.reset()
 
         _currentStylusState.value = state
         _initialStylusState.value = state
     }
-    
+
     ////////////////////////////////
     // actions sur flows > métier //
     ////////////////////////////////
-    
+
+    fun resetScroll() {
+        screenScroll.reset()
+    }
+
+    fun processScrollEvent(event: MotionEvent): Boolean {
+        return screenScroll.onTouchEvent(event)
+    }
+
     fun processMotionEvent(motionEvent: MotionEvent): Boolean {
 
+        val offset = screenScroll.totalTranslation
+        val correctedX = motionEvent.x - offset.x
+        val correctedY = motionEvent.y - offset.y
+        x = motionEvent.x
+        y = motionEvent.y
+        
         //updateDebugIndicators(motionEvent)
-
-        fingerTranslation(motionEvent)
 
         //main ou doigt
         val stylusIndex = (0..motionEvent.pointerCount - 1).firstOrNull {
             motionEvent.getToolType(it) == MotionEvent.TOOL_TYPE_STYLUS
         } ?: -1
+
+        if (motionEvent.actionMasked == ACTION_HOVER_ENTER
+            || motionEvent.actionMasked == ACTION_HOVER_MOVE
+            || motionEvent.actionMasked == ACTION_HOVER_EXIT
+        )
+            return true
 
         if (stylusIndex == -1)
             return true
@@ -100,12 +169,20 @@ class ScreenInteraction @Inject constructor(
                     newItems.add(
                         StylusStatePath(
                             path = mutableListOf(
-                                DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                                DrawPoint(
+                                    correctedX,
+                                    correctedY,
+                                    DrawPointType.START
+                                )
                             ).createPath(),
                             color = stylusColor.value,
                             style = stylusStroke.value,
                             pointList = mutableListOf(
-                                DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                                DrawPoint(
+                                    correctedX,
+                                    correctedY,
+                                    DrawPointType.START
+                                )
                             )
                         )
                     )
@@ -121,11 +198,13 @@ class ScreenInteraction @Inject constructor(
                         val lastItem = items.last()
 
                         val points = lastItem.pointList.toMutableList()
-                        points.add(DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE))
+                        points.add(
+                            DrawPoint(correctedX, correctedY, DrawPointType.LINE)
+                        )
 
                         val newPath = Path().apply {
                             addPath(lastItem.path)
-                            lineTo(motionEvent.x, motionEvent.y)
+                            lineTo(correctedX, correctedY)
                         }
                         items.add(lastItem.copy(path = newPath, pointList = points))
                         StylusState(state.name, items)
@@ -145,10 +224,14 @@ class ScreenInteraction @Inject constructor(
                         }
 
                         val lastItem = currentStylusState.value.items.last()
-                        lastItem.path.lineTo(motionEvent.x, motionEvent.y)
+                        lastItem.path.lineTo(correctedX, correctedY)
                         val newPointList = lastItem.pointList
                             .toMutableList().plus(
-                                DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE)
+                                DrawPoint(
+                                    correctedX,
+                                    correctedY,
+                                    DrawPointType.LINE
+                                )
                             )
                         val newLastItem = lastItem.copy(pointList = newPointList)
                         val newState = StylusState(
@@ -190,39 +273,50 @@ class ScreenInteraction @Inject constructor(
             MotionEvent.ACTION_MOVE -> {
                 if (oneFinger) {
                     //Scroll à 1 doigt détecté"
-                    TwoFingersScrollState.addPoint(motionEvent)
-
-                    _currentStylusState.update { state ->
-                        val newItems = state.items.translate(TwoFingersScrollState)
-
-                        StylusState(state.name, newItems)
-                    }
+                    translationState = translationState.copy(
+                        endPoint = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE)
+                    )
                 }
 
                 requestRendering(currentStylusState.value)
-                TwoFingersScrollState.setStartPoint(motionEvent)
             }
 
             MotionEvent.ACTION_POINTER_DOWN -> {
                 //2e pointeur abaissé
-                TwoFingersScrollState.setStartPoint(motionEvent)
+                translationState = translationState.copy(
+                    startPoint = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                )
             }
 
             MotionEvent.ACTION_POINTER_UP -> {
                 //2e pointeur est levé
-                TwoFingersScrollState.reset()
+                translationState = translationState.copy(
+                    startPoint = null,
+                    endPoint = null
+                )
             }
 
             MotionEvent.ACTION_DOWN -> {
                 if (oneFinger) {
                     //2e pointeur abaissé
-                    TwoFingersScrollState.setStartPoint(motionEvent)
+                    translationState = translationState.copy(
+                        startPoint = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+                    )
                 }
             }
 
             MotionEvent.ACTION_UP -> {
                 if (oneFinger) {
-                    TwoFingersScrollState.reset()
+                    val dx = translationState.xvar ?: 0f
+                    val dy = translationState.yvar ?: 0f
+
+                    totalTranslation.x += dx
+                    totalTranslation.y += dy
+
+                    translationState = translationState.copy(
+                        startPoint = null,
+                        endPoint = null
+                    )
                 } else {
                     //1er pointeur est levé
                     //setPointerCount(0)

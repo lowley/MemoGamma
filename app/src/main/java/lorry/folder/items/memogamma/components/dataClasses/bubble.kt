@@ -94,14 +94,22 @@ data class TwoFingersScrollState(
     val startPoint: DrawPoint?,
     val endPoint: DrawPoint?,
 ) {
+    var lastXvar: Float = 0f
+    var lastYvar: Float = 0f
+    
     val xvar: Float?
-        get() = if (startPoint != null && endPoint != null)
+        get() = if (startPoint != null && endPoint != null) {
+            lastXvar = endPoint.x - startPoint.x
             endPoint.x - startPoint.x
-        else null
+        }
+        else lastXvar
     val yvar: Float?
-        get() = if (startPoint != null && endPoint != null)
+        get() = if (startPoint != null && endPoint != null) {
+            lastYvar = endPoint.y - startPoint.y
             endPoint.y - startPoint.y
-        else null
+        }
+        else lastYvar
+    
     val isDefined: Boolean = startPoint != null && endPoint != null
 
     companion object {
@@ -123,12 +131,14 @@ data class TwoFingersScrollState(
             return instance!!
         }
 
-        fun addPoint(motionEvent: MotionEvent): TwoFingersScrollState {
-            val point = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.START)
+        fun setEndPoint(motionEvent: MotionEvent): TwoFingersScrollState {
+            val point = DrawPoint(motionEvent.x, motionEvent.y, DrawPointType.LINE)
             defineInstance(ensureInstance().copy(endPoint = point))
             return instance!!
         }
 
+        
+        
         val deltaX: Float?
             get() = ensureInstance().xvar ?: 0f
 
